@@ -38,7 +38,7 @@ def get_all_branches(repo_path: str):
 
 
 def get_merge_commits_map(repo_path: str): 
-    merge_commts_map = defaultdict(list)
+    merge_commts_map: dict[str, list[str]] = defaultdict(list)
     author_mapping = defaultdict(set)
 
     for branch in get_all_branches(repo_path):
@@ -73,3 +73,18 @@ def get_difference(merge_commit: git.Commit) -> str:
 
     return difference
 
+
+def get_current_state(commit: git.Commit):
+    file_chunks = []
+
+    for blob in commit.tree.traverse():
+        if blob.type == 'blob':  # it's a file
+            file_path = blob.path
+            file_content = blob.data_stream.read().decode('utf-8', errors='replace')
+            print(file_path)
+            formatted = f"### FILE: `{file_path}`\n\n```\n{file_content}\n```\n"
+            file_chunks.append(formatted)
+
+    # Join all file contents into a single string
+    final_string = "\n\n".join(file_chunks)
+    return final_string
