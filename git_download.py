@@ -15,8 +15,9 @@ def download_repo(repo_url, target_dir, token=None):
     try:
         if os.path.exists(target_dir):
             print(
-                '''Target directory already exists and has content,
-                delete this directory or specify new''')
+                "Target directory already exists and has content.",
+                "Delete this directory or specify new")
+            return
 
         if token:
             if repo_url.startswith('https://'):
@@ -30,11 +31,22 @@ def download_repo(repo_url, target_dir, token=None):
         print("Cloning repository...")
 
         if token and repo_url.startswith('https://'):
-            Repo.clone_from(auth_url, target_dir)
+            repo = Repo.clone_from(auth_url, target_dir)
         else:
-            Repo.clone_from(repo_url, target_dir)
+            repo = Repo.clone_from(repo_url, target_dir)
 
         print(f"Repository successfully cloned to {target_dir}")
+
+        for remote_ref in repo.remote().refs:
+            branch_name = remote_ref.remote_head
+            if branch_name == 'HEAD':
+                continue
+
+            repo.create_head(
+                branch_name, remote_ref).set_tracking_branch(remote_ref)
+            print(f"Created local branch: {branch_name}")
+
+        print("All branches fetched")
 
     except Exception as e:
         print(f"Error cloning repository: {str(e)}")
@@ -44,7 +56,7 @@ def main():
     TOKEN = ""
 
     download_repo(
-        repo_url="https://github.com/muhammaduss/nvim-config.git",
+        repo_url="https://gitlab.com/muhammaduss/testtest.git",
         target_dir="dir",
         token=TOKEN
     )
