@@ -1,0 +1,34 @@
+==== File: accesslist/views.py ====
+@@ -1316,23 +1316,24 @@ def set_team_id(request=None):
+ 
+ def makeAndDownloadMdAndDocx(request, acl_id):
+     file_path = None
+-    gitlab_filename = request.session['LOCAL_STORAGE']['acl_create_info.html'][9]
++    acl_obj = ACL.objects.get(id=acl_id)
++    local_storage = json.loads(acl_obj.acltext)
++    gitlab_filename = local_storage['acl_create_info.html'][9]
+ 
+     file_type = request.GET.get('file_type') or None
+ 
+     try:
+         if file_type:
+             if file_type == 'docx':
+-                acl_project = request.session['LOCAL_STORAGE']['acl_create_info.html'][4]
++                acl_project = local_storage['acl_create_info.html'][4]
+                 gitlab_repo_url = ACLGitlabStore.objects.get(project=acl_project).gitlab_url
+-                file_path = make_doc(request, request.session['LOCAL_STORAGE'], gitlab_repo_url=gitlab_repo_url, gitlab_filename=gitlab_filename)
++                file_path = make_doc(request, local_storage, gitlab_repo_url=gitlab_repo_url, gitlab_filename=gitlab_filename) or None
+             elif file_type == 'md':
+                 filename_without_extension = os.path.splitext(gitlab_filename)[0]
+-                file_path = MakeMarkDown(request, request.session['LOCAL_STORAGE'], filename_without_extension, acl_id) or None
++                file_path = MakeMarkDown(request, local_storage, filename_without_extension, acl_id) or None
+             if file_path:
+                 file_name = os.path.basename(file_path)
+                 return FileResponse(open(f'static/{file_type}/{file_name}', 'rb'))
+-
+     except Exception as e:
+         logger.error(f'[MAKE FILE] Не удалось сформировать файл:Ошибка:{e};file_type:{file_type}')
+         AclOver()
+\ No newline at end of file
+
+

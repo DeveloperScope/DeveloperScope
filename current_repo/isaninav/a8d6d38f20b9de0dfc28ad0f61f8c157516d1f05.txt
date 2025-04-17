@@ -1,0 +1,23 @@
+==== File: accesslist/templates/acl_pending.html ====
+@@ -194,6 +194,7 @@
+                          <table class="border-0 traffic-table table-hover">
+                              <thead class="text-secondary border-bottom small">
+                              <th>IP-адрес источника</th>
++                             <th>FQDN</th>
+                              <th>Префикс-сети</th>
+                              <th>Описание (цель)</th>
+                              </thead>
+@@ -201,8 +202,9 @@
+                              {% for el in key.1 %}
+                              <tr>
+                                  <td style="width: 40%">{{ el.0 }}</td>
+-                                 <td>{{ el.1 }}</td>
+-                                 <td>{{ el.2 }}</td>
++                                 <td style="width: 20%">{{ el.1 }}</td>
++                                 <td style="width: 20%">{{ el.2 }}</td>
++                                 <td style="width: 20%">{{ el.3 }}</td>
+                                  {% if not el.0|check_external %}
+                                     <td class="text-danger">*Вероятно неправильный IP-адрес</td>
+                                 {% endif %}
+
+

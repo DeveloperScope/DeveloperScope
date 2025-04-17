@@ -1,0 +1,25 @@
+==== File: accesslist/views.py ====
+@@ -778,6 +778,7 @@ def upload_acl_from_git(request):
+             logger.error(f'IndexError: {e}')
+         except Exception as e:
+             if e.status == 128:
++                logger.error(f'Ошибка авторизации: e.status == 128: {e}')
+                 return HttpResponse(json.dumps({'error': f"Ошибка: У пользователя {request.session['GIT_USERNAME']} нет доступа"}), content_type="application/json")
+             else:
+                 logger.info(f"[ПРОВЕРКА АВТОРИЗАЦИИ] Ошибка: {e}")
+
+
+==== File: ownerlist/utils.py ====
+@@ -1163,8 +1163,8 @@ class GitWorker:
+                  self.USERNAME = self.USERNAME + '%40' + 'alf'+'ast' + 'rah'+'.ru'
+ 
+              if PASSWORD:
+-                 PASSWORD = urllib.parse.quote_plus(PASSWORD)
+-                 self.PASSWORD = hashlib.sha256(PASSWORD.encode()).hexdigest()
++                 self.PASSWORD = urllib.parse.quote_plus(PASSWORD)
++                 logger.info(f'Пароль пользователя {self.USERNAME} успешно получен и замаскирован.')
+              # if '@' in self.PASSWORD:
+              #     logger.warning('В пароле пользователя {} имеется запрещенный символ'.format(self.USERNAME))
+ 
+
+

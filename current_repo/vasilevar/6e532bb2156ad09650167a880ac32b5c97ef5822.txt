@@ -1,0 +1,1094 @@
+==== File: accesslist/signals.py ====
+@@ -12,4 +12,10 @@ def run_send_acl_task(sender, instance, **kwargs):
+         gitlab_repo_url = ACLGitlabStore.objects.get(
+             project=instance.project
+         ).gitlab_url
+-        send_acl.delay(acl_id=instance.id, gitlab_repo_url=gitlab_repo_url)
++        send_acl.apply_async(
++            kwargs={
++                "acl_id": instance.id,
++                "gitlab_repo_url": gitlab_repo_url,
++            },
++            countdown=10,
++        )
+
+
+==== File: accesslist/templates/acl_traffic.html ====
+@@ -91,8 +91,8 @@
+                 <tbody>
+                  {% if LOCAL_STORAGE|length > 0 %}
+                     {% for item in LOCAL_STORAGE %}
+-                    <tr {% if item|count_empty_strings > 1 %}style="background-color: yellow;"{% endif %}>
+-                      {% if item|count_empty_strings > 1 %}
++                    <tr {% if item|count_empty_strings %}style="background-color: yellow;"{% endif %}>
++                      {% if item|count_empty_strings %}
+                       <script>
+                           ShowNotify(1, "Обратите внимание найдены невалидные строки.");
+                       </script>
+@@ -227,13 +227,22 @@
+ 
+     /*Функция автоматического резолва доменов в IP*/
+     $(document).ready(function(){
+-       $(".table-ip-internal").delegate("textarea[name*='domain']", "change.resolve", function() {
+-                if ((/^([a-z0-9]+(-[a-z0-9]+)*\.)+[a-z]{2,}$/).test($(this).val()))
+-                {
+-                  return resolvDomain($(this).val(), $(this));
++      $(".table-ip-internal").on("change.resolve", "textarea[name*='domain']", function() {
++        let domainInput = $(this);
++        let ipInput = domainInput.closest('td').next().find("input[name*='ip'], textarea[name*='ip']").first();
++        
++        if (domainInput.val().trim() === '') {
++            // Если поле домена пустое, очищаем соответствующее поле IP
++            ipInput.val('');
++        } else if ((/^([a-z0-9]+(-[a-z0-9]+)*\.)+[a-z]{2,}$/).test(domainInput.val())) {
++            resolvDomain(domainInput.val(), domainInput).then(function(result) {
++                if (result.ip) {
++                    ipInput.val(result.ip);
+                 }
+-       })
+-    });
++            });
++        }
++      });
++});
+ 
+ </script>
+ </div>
+
+
+==== File: accesslist/templatetags/empty_strings.py ====
+@@ -5,4 +5,4 @@ register = template.Library()
+ 
+ @register.filter
+ def count_empty_strings(lst):
+-    return lst.count(" ")
++    return lst.count(" ") > 1 or len(lst) < 7
+
+
+==== File: accesslist/templatetags/get_index.py ====
+@@ -2,6 +2,7 @@ from django import template
+ 
+ register = template.Library()
+ 
++
+ @register.filter
+ def get_index(lst, i):
+     if i <= len(lst) - 1:
+
+
+==== File: accesslist/templatetags/random_numbers.py ====
+@@ -1,14 +1,11 @@
+-import random
+ import string
++
+ from django import template
++from django.utils.crypto import get_random_string
+ 
+ register = template.Library()
+ 
+ 
+ @register.simple_tag
+ def random_int(a=None, b=None):
+-    # if b is None:
+-    #     a, b = 0, a
+-    # return random.randint(a, b)
+-    cnt = 4
+-    return ''.join([random.choice(string.digits) for n in range(cnt)])
++    return get_random_string(8, allowed_chars=string.ascii_lowercase + string.digits)
+
+
+==== File: accesslist/views.py ====
+@@ -51,6 +51,7 @@ from ownerlist.utils import (
+     SendMessageToApprove,
+     acl_sending_retry_checking,
+     convert_md_to_dict,
++    create_markdown_file,
+     get_acl_from_gitlab,
+     get_client_ip,
+     get_files_from_gitlab,
+@@ -65,7 +66,7 @@ from ownerlist.utils import (
+     send_to_mattermost,
+     sync_acl_portal_projects_list,
+     update_callback_status,
+-    upload_file_handler, create_markdown_file,
++    upload_file_handler,
+ )
+ from teams.models import Block, Team
+ 
+@@ -1994,7 +1995,9 @@ def makeAndDownloadMdAndDocx(request, acl_id):
+             if file_type == "docx":
+                 logger.info("[MAKE FILE] Создание docx файла")
+                 acl_project = local_storage["acl_create_info.html"][4]
+-                gitlab_repo_url = ACLGitlabStore.objects.get(project=acl_project).gitlab_url
++                gitlab_repo_url = ACLGitlabStore.objects.get(
++                    project=acl_project
++                ).gitlab_url
+                 file_path = make_doc(
+                     request,
+                     local_storage,
+@@ -2011,7 +2014,9 @@ def makeAndDownloadMdAndDocx(request, acl_id):
+                 logger.info(f"[MAKE FILE] Файл md успешно сформирован:{file_path}")
+ 
+             if file_path:
+-                logger.info("[MAKE FILE] Путь к файлу получен. Подготовка к скачиванию.")
++                logger.info(
++                    "[MAKE FILE] Путь к файлу получен. Подготовка к скачиванию."
++                )
+                 file_name = os.path.basename(file_path)
+                 logger.info(f"[MAKE FILE] Получено имя файла:{file_name}")
+                 file_md_abs = os.path.join(
+@@ -2025,7 +2030,9 @@ def makeAndDownloadMdAndDocx(request, acl_id):
+                 )
+                 file = open(file_md_abs, "rb")
+                 file_response = FileResponse(file)
+-                file_response["Content-Disposition"] = f'attachment; filename="{file_name}"'
++                file_response["Content-Disposition"] = (
++                    f'attachment; filename="{file_name}"'
++                )
+                 return file_response
+ 
+         logger.error(
+
+
+==== File: acladmin/tasks.py ====
+@@ -32,8 +32,12 @@ def send_acl(acl_id, gitlab_repo_url):
+             gitlab_filename=acl_object.git_filename,
+         )
+     except Exception as e:
+-        print(f'[acl_portal][Celery send_acl][DEBUG:{settings.DEBUG}] Не удалось сформировать docx файл:{e}.')
+-        send_to_mattermost(f'[acl_portal][Celery send_acl] Не удалось сформировать docx файл:{e}.')
++        print(
++            f"[acl_portal][Celery send_acl][DEBUG:{settings.DEBUG}] Не удалось сформировать docx файл:{e}."
++        )
++        send_to_mattermost(
++            f"[acl_portal][Celery send_acl] Не удалось сформировать docx файл:{e}."
++        )
+         return False
+ 
+     docx_url = f"https://acl.vesta.ru/{doc_result[1:]}"
+
+
+==== File: ownerlist/urls.py ====
+@@ -1,5 +1,15 @@
+-from django.urls import path, re_path
+-from .views import SearchView, TreeView, IpTable, Vpn, ip_save, ip_delete, ip_resolve, domain_resolve
++from django.urls import re_path
++
++from .views import (
++    IpTable,
++    SearchView,
++    TreeView,
++    Vpn,
++    domain_resolve,
++    ip_delete,
++    ip_resolve,
++    ip_save,
++)
+ 
+ urlpatterns = [
+     #path('ipconfig/', SearchView.as_view(), name="ipconfig_urls"),
+
+
+==== File: ownerlist/utils.py ====
+@@ -20,6 +20,7 @@ from pathlib import Path
+ from shutil import copyfile
+ from time import sleep
+ 
++import docx
+ import git
+ import requests
+ import xlrd
+@@ -242,6 +243,7 @@ def request_handler(request, namespace=""):
+     LOCAL_STORAGE = {}
+     cnt_key = 0
+     empty_key = 0
++
+     if namespace == FORM_APPLICATION_KEYS[0]:  # first
+         LOCAL_STORAGE[namespace] = []
+         for idx, post_key in enumerate(POST_FORM_KEYS):
+@@ -1065,7 +1067,6 @@ def update_callback_status(request, taskid, name, value, event=1):
+ 
+ 
+ def add_hyperlink(paragraph, url, text, color, underline):
+-    import docx
+ 
+     part = paragraph.part
+     r_id = part.relate_to(
+@@ -1099,68 +1100,137 @@ def make_doc(
+ ) -> str:
+     """Функция для генерации docx файла"""
+ 
+-    def normalize_whitespace(data_set):
+-        for data_idx, data in enumerate(data_set):
+-            if data == "acl_traffic.html":
+-                for row_idx, row in enumerate(data_set[data]):
+-                    if len(row) == 7:
+-                        data_set[data][row_idx].append(" ")
+-            try:
+-                if data_idx == 0:
+-                    continue
+-                for row_idx, row in enumerate(data_set[data]):
+-                    for cell_idx, cell_value in enumerate(row):
+-                        if all(ch.isspace() for ch in cell_value):
+-                            data_set[data][row_idx][cell_idx] = " "
+-                        else:
+-                            try:
+-                                data_set[data][row_idx][cell_idx] = cell_value.strip()
+-                            except Exception as e:
+-                                logger.error(e)
+-            except:
+-                logger.info(
+-                    "Не удалось нормализовать пробелы docx. Продолжаем создание docx."
+-                )
+-                continue
++    def normalize_whitespace(data):
++        for key, value in data.items():
++            if key == "acl_traffic.html":
++                value = [row + [" "] if len(row) == 7 else row for row in value]
++            elif key != "acl_create_info.html":
++                value = [
++                    [cell.strip() if cell else " " for cell in row] for row in value
++                ]
++            data[key] = value
++        return data
++
++    def get_gitlab_data():
++        if gitlab_repo_url and gitlab_filename:
++            md_content, _ = get_acl_from_gitlab(
++                repo_url=gitlab_repo_url,
++                file_name=gitlab_filename,
++            )
++            return normalize_whitespace(convert_md_to_dict(md_content)["LOCAL_STORAGE"])
++        print("Не удалось получить gitlab_data_set")
+         return data_set
+ 
+-    if gitlab_repo_url != "" and gitlab_filename != "":
+-        md_content, project_desc = get_acl_from_gitlab(
+-            repo_url=gitlab_repo_url, file_name=gitlab_filename
+-        )
++    def prepare_file_name():
++        try:
++            name = data_set["acl_create_info.html"][4] or ""
++            if len(name) > 10:
++                name = "_".join(name.split()[:2])
++            return (
++                name.replace(" ", "_")
++                .replace(",", "")
++                .replace(".", "")
++                .replace("/", "_")
++            )
++        except:
++            return str(uuid.uuid4())
++
++    def highlight_changes(cell, is_new, is_deleted):
++        paragraphs = cell.paragraphs if hasattr(cell, "paragraphs") else [cell]
++
++        for paragraph in paragraphs:
++            for run in paragraph.runs:
++                if is_new:
++                    run.font.highlight_color = WD_COLOR_INDEX.GREEN
++                    run.font.color.rgb = RGBColor(255, 255, 255)
++                elif is_deleted:
++                    run.font.strike = True
++                    run.font.highlight_color = WD_COLOR_INDEX.RED
++                    run.font.color.rgb = RGBColor(255, 255, 255)
++
++    def process_contact_table(table, data, gitlab_data):
++        not_found_count = 0
++        for row_idx, row_data in enumerate(data):
++            if row_idx >= len(table.rows) - 1:
++                table.add_row()
++            cell = table.cell(row_idx, 1)
++
++            if row_idx == 5 and row_data not in ("Нет", ""):
++                try:
++                    for paragraph in cell.paragraphs:
++                        add_hyperlink(paragraph, row_data, row_data, "0000EE", True)
++                except Exception:
++                    cell.text = row_data
++            else:
++                cell.text = row_data
+ 
+-        gitlab_data_set = convert_md_to_dict(md_content)["LOCAL_STORAGE"]
+-        data_set = normalize_whitespace(data_set)
+-        gitlab_data_set = normalize_whitespace(gitlab_data_set)
+-    else:
+-        print("Не удалось получить gitlab_data_set")
+-        gitlab_data_set = data_set
++            gitlab_row_data = (
++                gitlab_data[row_idx] if row_idx < len(gitlab_data) else None
++            )
++            if str(row_data) != str(gitlab_row_data):
++                highlight_changes(cell, True, False)
++                if gitlab_row_data:
++                    strike_paragraph = cell.add_paragraph()
++                    strike_paragraph.add_run(str(gitlab_row_data))
++                    highlight_changes(strike_paragraph, False, True)
++                else:
++                    not_found_count += 1
+ 
+-    if request:
+-        is_in_session = "ACT_MAKE_DOCX" in request.session
+-    else:
+-        is_in_session = None
++        if not_found_count > 0:
++            logger.info(
++                f"Не удалось найти {not_found_count} строк(и) страницы Контакты в gitlab"
++            )
+ 
+-    TEMPLATE_FILE = os.path.join(BASE_DIR, "templates//ACL.docx")
+-    try:
+-        fileuuid = data_set["acl_create_info.html"][4] or ""
+-        if len(fileuuid) > 10:
+-            fileuuid = fileuuid.split(" ")
+-            if len(fileuuid) > 2:
+-                fileuuid = fileuuid[:2]
+-            fileuuid = "_".join(fileuuid)
+-
+-        fileuuid = (
+-            fileuuid.replace(" ", "_")
+-            .replace(",", "")
+-            .replace(".", "")
+-            .replace("/", "_")
+-        )
+-    except:
+-        fileuuid = ""
++    def process_data_table(table, data_set, gitlab_data):
++        def compare_rows(row1, row2):
++            return all(
++                str(cell1).strip() == str(cell2).strip()
++                for cell1, cell2 in zip(row1, row2, strict=False)
++            )
++
++        # Очистка таблицы
++        for row in table.rows[1:]:
++            table._tbl.remove(row._tr)
+ 
+-    if fileuuid == "":
+-        fileuuid = str(uuid.uuid4())
++        # Обработка данных из data_set
++        for row_idx, row_data in enumerate(data_set, start=1):
++            table.add_row()
++            for cell_idx, cell_val in enumerate(row_data):
++                if cell_idx >= len(table.columns):
++                    continue
++                cell = table.cell(row_idx, cell_idx)
++                cell.text = str(cell_val)
++
++                # Проверяем, есть ли эта строка в gitlab_data
++                if not any(
++                    compare_rows(row_data, gitlab_row) for gitlab_row in gitlab_data
++                ):
++                    highlight_changes(cell, True, False)  # Новая строка
++
++        # Добавление удаленных строк из gitlab_data
++        for gitlab_row in gitlab_data:
++            if not any(compare_rows(gitlab_row, data_row) for data_row in data_set):
++                row_idx = len(table.rows)
++                table.add_row()
++                for cell_idx, cell_val in enumerate(gitlab_row):
++                    if cell_idx >= len(table.columns):
++                        continue
++                    cell = table.cell(row_idx, cell_idx)
++                    cell.text = str(cell_val)
++                    highlight_changes(cell, False, True)  # Удаленная строка
++
++        # Очистка пустых строк
++        for row in table.rows[::-1]:
++            if all(cell.text.strip() == "" for cell in row.cells):
++                table._tbl.remove(row._tr)
++
++    data_set = normalize_whitespace(data_set)
++    gitlab_data_set = get_gitlab_data()
++
++    is_in_session = request and "ACT_MAKE_DOCX" in request.session
++
++    TEMPLATE_FILE = os.path.join(BASE_DIR, "templates//ACL.docx")
++    fileuuid = prepare_file_name()
+ 
+     if is_in_session:
+         update_callback_status(
+@@ -1169,13 +1239,13 @@ def make_doc(
+ 
+     try:
+         gitlab_filename = gitlab_filename.split(".")[:-1][0]
+-        APP_FILE = "static/docx/ACL_" + fileuuid + "_" + gitlab_filename + ".docx"
++        APP_FILE = f"static/docx/ACL_{fileuuid}_{gitlab_filename}.docx"
+     except Exception as e:
+-        APP_FILE = "static/docx/ACL_" + fileuuid + ".docx"
++        APP_FILE = f"static/docx/ACL_{fileuuid}.docx"
+         logger.error(f"Не удалось добавить gitlab_filename в название файла docx:{e}")
+-        print(f"Не удалось добавить gitlab_filename в название файла docx:{e}")
+ 
+     doc = Document(TEMPLATE_FILE)
++
+     if is_in_session:
+         update_callback_status(
+             request, fileuuid, "docx_download_status", "Записываем изменения"
+@@ -1183,160 +1253,33 @@ def make_doc(
+ 
+     doc.styles["Normal"].font.name = "Verdana"
+     doc.styles["Normal"].font.size = Pt(10)
+-    for data_inx, data in enumerate(FORM_APPLICATION_KEYS):
+-        table_tmp = doc.tables[data_inx]  # Берем таблицу по номеру
+-        table_rows = len(table_tmp.rows) - 1  # Берем все строки из таблицы
+-        table_cols = len(table_tmp.columns)
+-        if data_inx == 0:  # Для таблицы контакты, меняем правила игры
+-            notFoundCount = 0
+-            for row_idx, row_data in enumerate(data_set[data]):
+-                try:
+-                    if row_idx >= table_rows:
+-                        table_tmp.add_row()
+-                    if row_idx == 5:
+-                        if row_data != "Нет" and row_data != "":
+-                            try:
+-                                for paragraph in table_tmp.cell(row_idx, 1).paragraphs:
+-                                    add_hyperlink(
+-                                        paragraph, row_data, row_data, "0000EE", True
+-                                    )
+-                            except Exception:
+-                                table_tmp.cell(row_idx, 1).text = row_data
+-                        else:
+-                            table_tmp.cell(row_idx, 1).text = row_data
+-                    else:
+-                        table_tmp.cell(row_idx, 1).text = row_data
+ 
+-                    if str(row_data) not in gitlab_data_set.get(data, []):
+-                        for paragraph in table_tmp.cell(row_idx, 1).paragraphs:
+-                            for run in paragraph.runs:
+-                                run.font.highlight_color = WD_COLOR_INDEX.GREEN
+-                                run.font.color.rgb = RGBColor(255, 255, 255)
+-                        try:
+-                            strike_paragraph = table_tmp.cell(
+-                                row_idx, 1
+-                            ).add_paragraph()
+-                            run_strike = strike_paragraph.add_run(
+-                                str(gitlab_data_set.get(data, [])[row_idx])
+-                            )
+-                            run_strike.font.strike = True
+-                            run_strike.font.highlight_color = WD_COLOR_INDEX.RED
+-                            run_strike.font.color.rgb = RGBColor(255, 255, 255)
+-                        except:
+-                            notFoundCount += 1
+-                except Exception as e:
+-                    logger.error(e)
+-            if notFoundCount > 0:
+-                logger.info(
+-                    f"Не удалось найти {notFoundCount} строк(и) страницы Контакты в gitlab"
+-                )
+-        else:
+-            row_cnt = 0
+-            if data not in data_set:
+-                if data in gitlab_data_set:
+-                    for key, value in enumerate(gitlab_data_set[data], start=1):
+-                        try:
+-                            if row_cnt >= table_rows:
+-                                table_tmp.add_row()
+-                            if len(value) <= table_cols:
+-                                for cell_idx, cell_val in enumerate(value):
+-                                    cell = table_tmp.cell(key, cell_idx)
+-                                    cell.text = str(cell_val)
+-                                    cell.paragraphs[0].runs[0].font.strike = True
+-                                    cell.paragraphs[0].runs[
+-                                        0
+-                                    ].font.highlight_color = WD_COLOR_INDEX.RED
+-                                    cell.paragraphs[0].runs[0].font.color.rgb = (
+-                                        RGBColor(255, 255, 255)
+-                                    )
+-                        except Exception as e:
+-                            logger.error(f"[restore from gitlab data set error ] {e}")
+-                continue
+-            for key, value in enumerate(data_set[data], start=1):
+-                try:
+-                    if row_cnt >= table_rows:
+-                        table_tmp.add_row()
+-                    if len(value) <= table_cols:
+-                        for cell_idx, cell_val in enumerate(value):
+-                            try:
+-                                cell = table_tmp.cell(key, cell_idx)
+-                                cell.text = str(cell_val)
+-                            except Exception as e:
+-                                logger.error(e)
+-                        if data not in gitlab_data_set:
+-                            for cell_idx, cell_val in enumerate(value):
+-                                try:
+-                                    cell = table_tmp.cell(key, cell_idx)
+-                                    cell.paragraphs[0].runs[
+-                                        0
+-                                    ].font.highlight_color = WD_COLOR_INDEX.GREEN
+-                                    cell.paragraphs[0].runs[0].font.color.rgb = (
+-                                        RGBColor(255, 255, 255)
+-                                    )
+-                                except Exception as e:
+-                                    logger.error(e)
+-                        else:
+-                            if value not in gitlab_data_set[data]:
+-                                for cell_idx, cell_val in enumerate(value):
+-                                    try:
+-                                        cell = table_tmp.cell(key, cell_idx)
+-                                        cell.paragraphs[0].runs[
+-                                            0
+-                                        ].font.highlight_color = WD_COLOR_INDEX.GREEN
+-                                        cell.paragraphs[0].runs[0].font.color.rgb = (
+-                                            RGBColor(255, 255, 255)
+-                                        )
+-                                    except Exception as e:
+-                                        logger.error(e)
+-                    row_cnt += 1
+-                except Exception as e:
+-                    logger.error(e)
+-
+-        if data not in gitlab_data_set:
++    for data_idx, data_key in enumerate(FORM_APPLICATION_KEYS):
++        table = doc.tables[data_idx]
++        if data_key not in data_set:
+             continue
+-        if data in gitlab_data_set.keys():
+-            row_cnt = 0
+-            for row_idx, row_val in enumerate(gitlab_data_set[data], start=1):
+-                try:
+-                    if row_val not in data_set[data]:
+-                        logger.info(f"На портале отсутствует строка: {row_val}")
+-                        if len(row_val) <= table_cols and any(
+-                            cell_val for cell_val in row_val
+-                        ):  # check if row is not empty
+-                            new_row = table_tmp.add_row()  # add a new row
+-                            for cell_idx, cell_val in enumerate(row_val):
+-                                cell = new_row.cells[
+-                                    cell_idx
+-                                ]  # get the cell in the new row
+-                                cell.text = str(cell_val)  # set the cell text
+-                                cell.paragraphs[0].runs[
+-                                    0
+-                                ].font.highlight_color = WD_COLOR_INDEX.RED
+-                                cell.paragraphs[0].runs[0].font.color.rgb = RGBColor(
+-                                    255, 255, 255
+-                                )
+-                                cell.paragraphs[0].runs[0].font.strike = True
+-                except Exception as e:
+-                    logger.error(e)
+-        # Очистка пустых строк
+-        for row in table_tmp.rows:
+-            if all(cell.text.strip() == "" for cell in row.cells):
+-                table_tmp._tbl.remove(row._tr)
+ 
+-    if is_in_session:
+-        if "taskid" in request.session:
+-            if request.session["taskid"] != "":
+-                p = doc.add_paragraph(request.session["taskid"])
+-                table = doc.tables[0]
+-                table._element.addnext(p._p)
++        if data_idx == 0:  # Таблица контактов
++            process_contact_table(
++                table, data_set[data_key], gitlab_data_set.get(data_key, [])
++            )
++        else:
++            process_data_table(
++                table, data_set[data_key], gitlab_data_set.get(data_key, [])
++            )
++
++    if is_in_session and "taskid" in request.session and request.session["taskid"]:
++        p = doc.add_paragraph(request.session["taskid"])
++        doc.tables[0]._element.addnext(p._p)
+ 
+     if is_in_session:
+         update_callback_status(
+             request,
+             fileuuid,
+             "docx_download_status",
+-            "Сохраняем файл {} ".format("Application_" + fileuuid),
++            f"Сохраняем файл Application_{fileuuid}",
+         )
++
+     doc.save(os.path.join(BASE_DIR, APP_FILE))
+     return "/" + APP_FILE
+ 
+@@ -1452,6 +1395,7 @@ def table(records, fields, headings=None, alignment=None, file=None):
+ 
+ def create_markdown_file(request, json_data, filename, fileuuid=""):
+     """Создает markdown-файл из JSON-данных"""
++    data_items = json_data.items()
+ 
+     if request:
+         update_callback_status(
+@@ -1468,7 +1412,7 @@ def create_markdown_file(request, json_data, filename, fileuuid=""):
+                 "acl_external_resources.html": md_write_acl_external_resources,
+                 "acl_traffic.html": md_write_acl_traffic,
+             }
+-            for key, data in json_data.items():
++            for key, data in data_items:
+                 if key in func_map:
+                     func_map[key](file, data)
+ 
+@@ -1560,7 +1504,7 @@ def md_write_acl_traffic(file, data):
+         # TODO временно до момента реструктуризации поля Acltext
+         # max_length = max(len(item) for item in data)
+         max_length = len(traffic_column)
+-        data = [item + [" "] * (max_length - len(item)) for item in data]
++        data = prepare_data_for_table(data, traffic_column)
+ 
+         table(
+             records=data,
+@@ -1571,6 +1515,16 @@ def md_write_acl_traffic(file, data):
+         )
+ 
+ 
++def prepare_data_for_table(data, fields):
++    max_length = len(fields)
++    prepared_data = []
++    for item in data:
++        prepared_item = item[:max_length]
++        prepared_item.extend([""] * (max_length - len(prepared_item)))
++        prepared_data.append(prepared_item)
++    return prepared_data
++
++
+ def md_handle_error(filename, fileuuid, e):
+     print(
+         f"[ACL PORTAL] Error creating MD: {e} | filename: {filename} | fileuuid: {fileuuid}"
+@@ -2358,7 +2312,7 @@ def send_onmitracker(
+             if res and res.status_code == 200:
+                 result = res.text
+                 logger.info("OMNITRACKER ANSWER ====" + result)
+-                if result and len(result) > 3 and 'strResponse' in result:
++                if result and len(result) > 3 and "strResponse" in result:
+                     result = result.split('strResponse">')
+                     if len(result) > 1:
+                         result = result[1].split("</")[0]
+@@ -2698,7 +2652,7 @@ def convert_md_to_dict(md_content: str):
+         lines = md_content.split("\n")
+ 
+         current_section = None
+-        for idx, line in enumerate(lines):
++        for _, line in enumerate(lines):
+             line = line.strip()
+             if line.startswith("##### Описание доступа к ресурсам"):
+                 current_section = "acl_create_info.html"
+@@ -2952,7 +2906,7 @@ def celery_send_omnitracker(sender, title, text, attach, uuid=None):
+ 
+             if res and res.status_code == 200:
+                 result = res.text
+-                if result and len(result) > 3 and 'strResponse' in result:
++                if result and len(result) > 3 and "strResponse" in result:
+                     result = result.split('strResponse">')
+                     if len(result) > 1:
+                         result = result[1].split("</")[0]
+
+
+==== File: ownerlist/views.py ====
+@@ -1,34 +1,38 @@
+-from django.shortcuts import render
+-from django.views.generic import View
+-from django.shortcuts import redirect
+-from django.http import HttpResponse, JsonResponse, HttpResponseBadRequest, HttpResponseNotFound
+-from .forms import UploadFileForm
+-from .utils import upload_file_handler, ExtractDataXls, search_text
+-from django.contrib import messages
+ import json
+-from django.shortcuts import redirect
+-from django.urls import reverse
+ import re
+-from .utils import BaseView
+-from .models import Iplist, Tags, Owners
+-from django.core.paginator import Paginator
+-from django.views.decorators.csrf import csrf_exempt
+ import socket
++
++from django.apps import apps
++from django.contrib import messages
+ from django.contrib.auth.mixins import LoginRequiredMixin
++from django.core.paginator import Paginator
++from django.http import (
++    HttpResponse,
++    HttpResponseBadRequest,
++    HttpResponseNotFound,
++)
++from django.shortcuts import redirect, render
++from django.urls import reverse
++from django.views.decorators.csrf import csrf_exempt
++from django.views.generic import View
++
+ from ownerlist.utils import ClearSessionMeta
+-from django.apps import apps
++
++from .models import Iplist, Owners, Tags
++from .utils import BaseView, search_text, upload_file_handler
++
+ 
+ class IpTable(BaseView, LoginRequiredMixin, View):
+     def get(self, request):
+         context = {}
+         ClearSessionMeta(request)
+-        if not 'dataset' in request.GET:
+-            response = redirect(reverse('iptable_urls'))
+-            response['Location'] += '?dataset=1&&page=1'
++        if "dataset" not in request.GET:
++            response = redirect(reverse("iptable_urls"))
++            response["Location"] += "?dataset=1&&page=1"
+             return response
+ 
+-        page_dataset = request.GET.get('dataset', 1)
+-        page_offset = request.GET.get('page', 1)
++        page_dataset = request.GET.get("dataset", 1)
++        page_offset = request.GET.get("page", 1)
+ 
+         if page_dataset is None:
+             page_dataset = 1
+@@ -36,40 +40,40 @@ class IpTable(BaseView, LoginRequiredMixin, View):
+             page_dataset = int(page_dataset)
+ 
+         if page_dataset != 0:
+-            data = Iplist.objects.filter(tags__id=page_dataset).order_by('ipv4')
++            data = Iplist.objects.filter(tags__id=page_dataset).order_by("ipv4")
+         else:
+             data = Iplist.objects.filter(tags__id=1)
+ 
+         paginator = Paginator(data, 15)
+-        page_number = request.GET.get('page', 1)
++        page_number = request.GET.get("page", 1)
+         page = paginator.get_page(page_number)
+ 
+         is_paginated = page.has_other_pages()
+ 
+         if page.has_previous():
+-                prev_url = '?dataset={}&&page={}'.format(page_dataset, page.previous_page_number())
++            prev_url = f"?dataset={page_dataset}&&page={page.previous_page_number()}"
+         else:
+-                prev_url = ''
++            prev_url = ""
+ 
+         if page.has_next():
+-                next_url = '?dataset={}&&page={}'.format(page_dataset,page.next_page_number())
++            next_url = f"?dataset={page_dataset}&&page={page.next_page_number()}"
+ 
+         else:
+-            next_url = ''
++            next_url = ""
+ 
+         context = {
+-                "dataset": page,
+-                "page_dataset": page_dataset,
+-                "is_paginated": is_paginated,
+-                "url_mask": '?dataset={}&&page='.format(page_dataset),
+-                "next_url": next_url,
+-                "prev_url": prev_url
+-            }
++            "dataset": page,
++            "page_dataset": page_dataset,
++            "is_paginated": is_paginated,
++            "url_mask": f"?dataset={page_dataset}&&page=",
++            "next_url": next_url,
++            "prev_url": prev_url,
++        }
+ 
+-        assets = Tags.objects.all()#[:15]
+-        context['assets'] = assets
++        assets = Tags.objects.all()  # [:15]
++        context["assets"] = assets
+ 
+-        return render(request, 'iptable.html', context)
++        return render(request, "iptable.html", context)
+ 
+     def post(self, request):
+         result = None
+@@ -77,57 +81,64 @@ class IpTable(BaseView, LoginRequiredMixin, View):
+             result = upload_file_handler(request)
+         except Exception as e:
+             if request.is_ajax:
+-                result = {'error': str(e)}
++                result = {"error": str(e)}
+             else:
+                 messages.error(request, str(e))
+ 
+-        if request.method == 'POST' and request.is_ajax:
++        if request.method == "POST" and request.is_ajax:
+             return HttpResponse(json.dumps(result), content_type="application/text")
+-        return render(request, 'iptable.html', context=result)
++        return render(request, "iptable.html", context=result)
++
+ 
+ class TreeView(BaseView, View):
+     def get(self, request):
+-        return render(request, 'index.html')
++        return render(request, "index.html")
+ 
+ 
+ class SearchView(BaseView, View):
+     def get(self, request):
+         context = {}
+-        search = request.path.split('/')
++        search = request.path.split("/")
+         result = search[2].strip().lower()
+-        Acl = apps.get_model('accesslist', 'ACL')
+-        if result == '':
+-           return redirect('ipconfig_urls')
++        Acl = apps.get_model("accesslist", "ACL")
++        if result == "":
++            return redirect("ipconfig_urls")
+         if search is not None:
+-            if re.match(r"[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}", result):
+-                return redirect(reverse('aclhistory_urls', kwargs={'acl_id': result}))
++            if re.match(
++                r"[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}",
++                result,
++            ):
++                return redirect(reverse("aclhistory_urls", kwargs={"acl_id": result}))
+ 
+             if re.match(r"^\d{4,8}$", result):
+-                 try:
++                try:
+                     tmp = Acl.objects.get(taskid__exact=result)
+                     if tmp:
+-                        return redirect(reverse('aclhistory_urls', kwargs={'acl_id': tmp.id}))
+-                 except:
++                        return redirect(
++                            reverse("aclhistory_urls", kwargs={"acl_id": tmp.id})
++                        )
++                except:
+                     pass
+             context = search_text(request, result)
+-        return render(request, 'search.html', context=context)
++        return render(request, "search.html", context=context)
+ 
+ 
+ class Vpn(BaseView, View):
+     def get(self, request):
+-        return render(request, 'vpn.html')
++        return render(request, "vpn.html")
++
+ 
+ @csrf_exempt
+ def ip_resolve(request, *args, **kwargs):
+-    if request.method == 'POST':
+-        ip = request.POST.get('ip', '')
+-        result = {'status': ''}
++    if request.method == "POST":
++        ip = request.POST.get("ip", "")
++        result = {"status": ""}
+         if not re.match(r"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$", ip):
+-            return HttpResponseBadRequest('Неправильный IP-адрес')
++            return HttpResponseBadRequest("Неправильный IP-адрес")
+         if ip:
+             try:
+                 result = socket.gethostbyaddr(ip)
+-            except Exception as e:
++            except Exception:
+                 return HttpResponse(json.dumps(result), content_type="application/json")
+         return HttpResponse(json.dumps(result), content_type="application/json")
+     return HttpResponse(status=405)
+@@ -135,15 +146,18 @@ def ip_resolve(request, *args, **kwargs):
+ 
+ @csrf_exempt
+ def domain_resolve(request, *args, **kwargs):
+-    if request.method == 'POST':
+-        domain = request.POST.get('domain', '')
+-        result = {'status': ''}
+-        if not re.match(r"^(?=.{1,255}$)(?!-)[A-Za-z0-9\-]{1,63}(\.[A-Za-z0-9\-]{1,63})*\.?(?<!-)$", domain):
+-            return HttpResponseBadRequest('Неправильный домен')
++    if request.method == "POST":
++        domain = request.POST.get("domain", "")
++        result = ""
++        if not re.match(
++            r"^(?=.{1,255}$)(?!-)[A-Za-z0-9\-]{1,63}(\.[A-Za-z0-9\-]{1,63})*\.?(?<!-)$",
++            domain,
++        ):
++            return HttpResponseBadRequest("Неправильный домен")
+         if domain:
+             try:
+                 result = socket.gethostbyname(domain)
+-            except Exception as e:
++            except Exception:
+                 return HttpResponse(json.dumps(result), content_type="application/json")
+         return HttpResponse(json.dumps(result), content_type="application/json")
+     return HttpResponse(status=405)
+@@ -151,54 +165,59 @@ def domain_resolve(request, *args, **kwargs):
+ 
+ @csrf_exempt
+ def ip_delete(request, *args, **kwargs):
+-    if request.method == 'POST':
+-        idx = request.POST.get('idx')
+-        result = {'status': 'Данные удалены'}
++    if request.method == "POST":
++        idx = request.POST.get("idx")
++        result = {"status": "Данные удалены"}
+         try:
+             obj = Iplist.objects.get(id=idx)
+             obj.delete()
+         except Iplist.DoesNotExist:
+-            HttpResponseNotFound('IP адрес не найден')
++            HttpResponseNotFound("IP адрес не найден")
+         return HttpResponse(json.dumps(result), content_type="application/json")
+     return HttpResponse(status=405)
+ 
++
+ @csrf_exempt
+ def ip_save(request, *args, **kwargs):
+     """Функция изменяет или создает данные по ip"""
+-    if request.method == 'POST':
+-        result = {'status': 'Данные сохранены'}
+-        if 'ip' in request.POST and re.match(r"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$", request.POST.get('ip', '')):
+-            ip = request.POST.get('ip', '')
+-            idx = request.POST.get('idx', '')
+-            tags = request.POST.get('asset', '')
++    if request.method == "POST":
++        result = {"status": "Данные сохранены"}
++        if "ip" in request.POST and re.match(
++            r"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$", request.POST.get("ip", "")
++        ):
++            ip = request.POST.get("ip", "")
++            idx = request.POST.get("idx", "")
++            tags = request.POST.get("asset", "")
+         else:
+-            return HttpResponseBadRequest('Неправильный IP-адрес')
++            return HttpResponseBadRequest("Неправильный IP-адрес")
+         try:
+-                   if tags == '':
+-                        tags = 'DEFAULT'
+-                   tag, created = Tags.objects.get_or_create(name=tags)
+-                   owner, created_obj = Owners.objects.get_or_create(username=request.POST.get('owner', ''))
+-
+-                   if idx != '':
+-                        obj = Iplist.objects.get(id=idx)
+-                   else:
+-                        obj, created_ip = Iplist.objects.get_or_create(ipv4=ip)
+-                   if not created_ip:
+-                        obj.ipv4 = ip
+-                   obj.hostname = request.POST.get('domain', '')
+-                   obj.owner = owner
+-                   obj.comment = request.POST.get('comment', '')
+-                   if tag:
+-                            if idx != '':
+-                                obj.tags.add(*[tag.id])
+-                            else:
+-                                obj.tags.set([tag.id])
+-                   obj.save()
++            if tags == "":
++                tags = "DEFAULT"
++            tag, created = Tags.objects.get_or_create(name=tags)
++            owner, created_obj = Owners.objects.get_or_create(
++                username=request.POST.get("owner", "")
++            )
++
++            if idx != "":
++                obj = Iplist.objects.get(id=idx)
++            else:
++                obj, created_ip = Iplist.objects.get_or_create(ipv4=ip)
++            if not created_ip:
++                obj.ipv4 = ip
++            obj.hostname = request.POST.get("domain", "")
++            obj.owner = owner
++            obj.comment = request.POST.get("comment", "")
++            if tag:
++                if idx != "":
++                    obj.tags.add(*[tag.id])
++                else:
++                    obj.tags.set([tag.id])
++            obj.save()
+ 
+         except Iplist.DoesNotExist:
+-                 return HttpResponseNotFound('IP адрес не найден')
++            return HttpResponseNotFound("IP адрес не найден")
+         except Exception as e:
+-                return HttpResponseNotFound(str(e))
++            return HttpResponseNotFound(str(e))
+ 
+         return HttpResponse(json.dumps(result), content_type="application/json")
+-    return HttpResponse(status=405)
+\ No newline at end of file
++    return HttpResponse(status=405)
+
+
+==== File: static/js/main.js ====
+@@ -84,59 +84,41 @@ function sleep(delay) {
+     while (new Date().getTime() < start + delay);
+ }
+ 
+-async function resolvDomain(domain , el){
+-        if (domain === undefined || domain == '')
+-            return ''
+-         let ipform = $(el).closest('td')[0];
+-             ipform = $(ipform).next();
+-             ipform = $(ipform).find("input[name*='ip'], textarea[name*='ip']")[0];
+-             if (ipform) $(ipform).attr("disable", true);
+-
+-
+-        $.post("/iptable/domainresolv/", {
+-                                        domain:  domain,
+-                                        csrfmiddlewaretoken: '{{ csrf_token }}',
+-                }
+-
+-            ).done(function(data){
+-                try{
+-                    let status = JSON.parse(JSON.stringify(data));
+-                    if (status.hasOwnProperty('status'))
+-                    {
+-                        status = status['status'];
+-                    }
+-                    console.log(status);
+-                    if (status instanceof Array)
+-                        {
+-                            status = status[0];
+-                        }
+-                    if (status != 'undefined' && status!= '')
+-                    {
+-                             if (status && el)
+-                                {
+-                                    if (ipform)
+-                                    {
+-                                        $(ipform).val(status);
+-                                        if (ipform) $(ipform).attr("disable", false);
+-                                    }
+-                                    console.log(status);
+-                                }
+-
+-                        return status
+-                    }
+-
++function resolvDomain(domain, el) {
++    if (domain === undefined || domain === '')
++        return Promise.resolve('');
++
++    let ipform = $(el).closest('td').next().find("input[name*='ip'], textarea[name*='ip']").first();
++    if (ipform.length) ipform.attr("disabled", true);
++
++    return $.post("/iptable/domainresolv/", {
++        domain: domain,
++        csrfmiddlewaretoken: '{{ csrf_token }}',
++    })
++    .then(function(data) {
++        let result = '';
+ 
+-                }catch (e) {
+-                    if (ipform) $(ipform).attr("disable", false);
+-                    return '';
+-                }
++        try {
++            result = JSON.parse(data);
++        } catch (e) {
++            console.warn("Response is not valid JSON, using as is:", data);
++            result = data;
++        }
+ 
+-            }).fail(function(data){
+-                if (ipform) $(ipform).attr("disable", false);
+-               return '';
+-            });
++        if (ipform.length) {
++            ipform.val(result);
++            ipform.attr("disabled", false);
++        }
+ 
++        return result;
++    })
++    .fail(function(jqXHR, textStatus, errorThrown) {
++        console.error("AJAX request failed:", textStatus, errorThrown);
++        if (ipform.length) ipform.attr("disabled", false);
++        return '';
++    });
+ }
++
+ function extractUuid(myString)
+ {
+     try
+
+

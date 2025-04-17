@@ -1,0 +1,334 @@
+==== File: accesslist/templates/acl_create_info.html ====
+@@ -70,6 +70,10 @@
+                              <label for="input--file--upload" class="btn btn-upload btn-secondary m-1 input--file--label">Загрузить ACL из файла</label>
+                              {% csrf_token %}
+                          </form>
++                        </form>
++                        <div>
++                          <button type="button" class="btn btn-upload btn-secondary btn-lg m-1" data-toggle="modal" data-target="#upload-from-gitlab">Загрузить из gitlab</button>
++                        </div>
+                   {% endif %}
+ 
+ 
+@@ -246,6 +250,9 @@
+                              {% csrf_token %}
+ {#                             <button type="button"  class="btn btn-upload btn-secondary btn-lg m-1">Загрузить ACL из файла</button>#}
+                          </form>
++                              <div>
++                                  <button type="button" class="btn btn-upload btn-secondary btn-lg m-1" data-toggle="modal" data-target="#upload-from-gitlab">Загрузить из gitlab</button>
++                              </div>
+                     </div>
+                   {% endif %}
+           </div>
+@@ -409,7 +416,37 @@
+     </div>
+   </div>
+  </div>
+-
++<!-- Модальное окно для загрузки из gitlab -->
++<div class="modal fade" id="upload-from-gitlab" tab-index="-1" role="dialog" aria-labelledby="upload-from-gitlab-label">
++    <div class="modal-dialog" role="document">
++        <div class="modal-content">
++            <div class="modal-header">
++                <h4 class="modal-title" id="upload-from-gitlab-label">Загрузка ACL из gitlab</h4>
++                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
++                    <span aria-hidden="true">&times;</span>
++                </button>
++            </div>
++            <form action="{% url 'gitlab_upload_acl' %}" id="gitlab_upload_template" enctype="multipart/form-data" method="post">
++                    {% csrf_token %}
++                <h4 class="main-title ml-2 mt-2 mb-2">Проект:</h4>
++                <div class="contact-form__label">
++                    <select class="form-control" id="gitlab_proj_upload_dropdown" name="gitlab_proj_selected_option">
++                        <option value="" selected>Не выбрано</option>
++                        {% for acl_from_git in acl_gitlab_store %}
++                            <option value="{{ acl_from_git.gitlab_url }}">{{ acl_from_git.project }}</option>
++                        {% endfor %}
++                    </select>
++                </div>
++                <h4 class="main-title ml-2 mt-2 mb-2">Доступные ACL: </h4>
++                <div class="contact-form__label">
++                    <select class="form-control" id="gitlab_file_upload_dropdown" name="gitlab_file_selected_option">
++                    </select>
++                </div>
++                    <button type="submit" class="btn btn-secondary m-1" id="upload-from-git-btn">Загрузить</button>
++                </form>
++        </div>
++    </div>
++</div>
+ <script>
+     $(".modal-git .close").click(function(){
+         $("#action_make_git").prop('checked', false);
+@@ -499,7 +536,67 @@
+ 
+     });
+ 
++    document.getElementById('upload-from-git-btn').addEventListener('click', function(e) {
++        e.preventDefault();
++        upload_from_git_btn = document.getElementById('upload-from-git-btn');
++        upload_from_git_btn.disabled = true;
++
++        var form = document.getElementById('gitlab_upload_template');
++        var xhr = new XMLHttpRequest();
++        xhr.open(form.method, form.action, true);
++        ShowNotify(1, 'Идёт загрузка. Подождите');
++        xhr.onload = function() {
++            if (xhr.status === 200) {
++                var response = JSON.parse(xhr.responseText);
++                if(response.error){
++                    ShowNotify(0, response.error);
++                    upload_from_git_btn.disabled = false;
++                }
++                else{
++                    localStorage.setItem('showNotification', 'true');
++                    location.reload();
++                }
++            } else {
++                ShowNotify(0, 'Ошибка при загрузке ACL');
++                upload_from_git_btn.disabled = false;
++            }
++        };
++
++        xhr.onerror = function() {
++            ShowNotify(0, 'Ошибка при выполнении запроса');
++        };
+ 
++        xhr.send(new FormData(form));
++    });
++
++   if (localStorage.getItem('showNotification') === 'true'){
++        ShowNotify(2, 'ACL Успешно загружен');
++        localStorage.removeItem('showNotification');
++   }
++
++
++
++    $('#gitlab_proj_upload_dropdown').on('change', function() {
++        var selectedOption = $(this).val();
++        var csrfToken = $('input[name="csrfmiddlewaretoken"]').val();
++        $.ajax({
++            url: '/acl/git_get_files/',
++            type: 'POST',
++            data: { 'gitlab_repo_url': selectedOption },
++            headers: {'X-CSRFToken': csrfToken},
++            success: function(response) {
++                var files = JSON.parse(response);
++                var dropdown = $('#gitlab_file_upload_dropdown');
++                dropdown.empty();
++                $.each(files, function(index, value) {
++                    dropdown.append($('<option>').text(value).attr('value', value));
++                });
++            },
++            error: function(xhr, status, error) {
++                ShowNotify(0, 'Ошибка при отображении проектов');
++            }
++        });
++    });
+ </script>
+ 
+ {% endblock %}
+
+
+==== File: accesslist/urls.py ====
+@@ -66,6 +66,8 @@ urlpatterns = [
+     path("change/", AclStageChange, name="acl_stage_change"),
+     path("gitcheck/", Gitcheck, name="aclgit_urls"),
+     path("template/", UploadTemplate, name="acl_template_urls"),
++    path("git_upload_template/", upload_acl_from_git, name="gitlab_upload_acl"),
++    path("git_get_files/", get_gitlab_files, name="git_get_files"),
+     #path("overviewstatus/", OverViewStatus, name="aclcheck_status_urls"),
+     path("act/<str:acl_id>/<str:job>/<str:do>/", act),
+     path("task/<str:acl_id>/", task, name="aclcheck_status_urls"),
+
+
+==== File: accesslist/views.py ====
+@@ -12,6 +12,7 @@ from ownerlist.utils import make_doc, MakeMarkDown, request_handler, is_valid_uu
+ from ownerlist.utils import FORM_APPLICATION_KEYS, FORM_URLS, BaseView, GitWorker, BASE_DIR, UpdateCallBackStatus, \
+     ClearSessionMeta, upload_file_handler, omni_check_status, SendMessageToApprove
+ from ownerlist.utils import send_onmitracker, send_to_mattermost
++from ownerlist.utils import get_files_from_gitlab, convert_md_to_dict, get_acl_from_gitlab
+ import json
+ import uuid
+ from django.views.decorators.csrf import csrf_exempt
+@@ -122,7 +123,8 @@ class ObjectMixin:
+                                 'FULL_STORAGE': request.session['LOCAL_STORAGE'],
+                                 'FORM_APPLICATION_KEYS': FORM_APPLICATION_KEYS,
+                                 'template_name': self.template,
+-                                'blocks': Block.objects.all()
++                                'blocks': Block.objects.all(),
++                                'acl_gitlab_store': ACLGitlabStore.objects.all()
+                                 })
+                 if tmp and len(tmp.taskid) >= 3:
+                     if re.match(r"\d{4,}", str(tmp.taskid)):
+@@ -731,6 +733,48 @@ def Gitcheck(request):
+         return HttpResponse(json.dumps(result), content_type="application/json")
+     return HttpResponse(status=405)
+ 
++def get_gitlab_files(request):
++    if request.method == 'POST':
++        try:
++            gitlab_repo_url = request.POST.get('gitlab_repo_url')
++            md_files = get_files_from_gitlab(repo_url=gitlab_repo_url, branch_name='develop')
++            return HttpResponse(json.dumps(md_files), content_type="application/text")
++        except Exception as e:
++            logger.error(f"Ошибка при загрузке: {e}")
++    return HttpResponse(json.dumps([]), content_type="application/text")
++
++def upload_acl_from_git(request):
++    if request.method == 'POST':
++        gitlab_repo_url = request.POST.get('gitlab_proj_selected_option')
++        gitlab_file_name = request.POST.get('gitlab_file_selected_option')
++        if not re.match('^(https:\/\/git)?(.)+(.git)$', gitlab_repo_url):
++            result = {'error': 'Ошибка: Невалидный gitlab url.'}
++
++        try:
++            g = GitWorker(request, gitlab_repo_url, request.session['GIT_USERNAME'],
++                          request.session['GIT_PASSWORD'], None, '')
++            if g:
++                g.repo.git.ls_remote('--heads', '--tags', f'https://{request.session["GIT_USERNAME"]}%40alfastrah.ru:{request.session["GIT_PASSWORD"]}@gitlab.alfastrah.ru/acl/infrastructure/mattermost.git')
++                g.free()
++        except IndexError as e:
++            logger.error(f'IndexError: {e}')
++        except Exception as e:
++            if e.status == 128:
++                return HttpResponse(json.dumps({'error': "Ошибка: У пользователя нет доступа"}), content_type="application/json")
++            else:
++                logger.info(f"[ПРОВЕРКА АВТОРИЗАЦИИ] Ошибка: {e}")
++
++        md_content = get_acl_from_gitlab(repo_url=gitlab_repo_url, branch_name='develop', file_name=gitlab_file_name)
++        if md_content is not None:
++            result = convert_md_to_dict(md_content)
++            if 'LOCAL_STORAGE' in result:
++                request.session['LOCAL_STORAGE'] = result.get('LOCAL_STORAGE')
++        if request.method == 'POST' and request.is_ajax:
++            return HttpResponse(json.dumps(result), content_type="application/text")
++        return HttpResponse(json.dumps("Error method type"), content_type="application/text")
++
++
++
+ #@csrf_exempt
+ def UploadTemplate(request):
+     try:
+
+
+==== File: ownerlist/utils.py ====
+@@ -31,6 +31,7 @@ from inspect import stack
+ from django.db.models.expressions import RawSQL
+ from itertools import chain
+ from django.core.mail import EmailMessage, send_mail
++import base64
+ 
+ #from accesslist.models import ACL
+ try:
+@@ -57,7 +58,7 @@ contact_column = ["Параметр", "Значение"]
+ contact_table = ["ФИО", "E-mail", "Телефон", "Отдел/Управление", "Информационная система", "Описание/архитектура проекта", "Описание проекта (wiki)", "Дата заполнения", "Дата ввода в эксплуатацию", "Дата вывода из эксплуатации"]
+ external_column = ["IP-адрес", "Полное доменное имя источника", "Маска подсети/Префикс", "Описание"]
+ standart_column = ["IP-адрес", "Маска подсети/Префикс", "Описание"]
+-traffic_column = ["Hostname (Источник)", "IP Address (Источник)	", "Hostname (Назначение)", "IP Address (Назначение)", "Protocol/Port (Назначение)", "ПО использующее нестандартный порт","Описание (цель)"]
++traffic_column = ["Hostname (Источник)", "IP Address (Источник)", "Hostname (Назначение)", "IP Address (Назначение)", "Protocol/Port (Назначение)", "ПО использующее нестандартный порт", "Описание (цель)"]
+ 
+ OMNI_ACL_STATUS = {'inProgress': 'JOB',
+           'Done': 'CMP',
+@@ -1814,3 +1815,100 @@ def send_to_mattermost(*messages):
+             logger.warning("[Send to Mattermost] Failed to send message. Error: ", response.status_code)
+     except Exception as e:
+         logger.error(e)
++def get_gitlab_project_info(session, repo_url: str):
++    try:
++        base_api_url = "https://{request.session['GIT_USERNAME']}%40alfastrah.ru:{request.session['GIT_PASSWORD']}@gitlab.alfastrah.ru/api/v4/projects"
++        project_namespace = "/".join(repo_url.split('/')[3:-1]).replace('/', '%2F')
++        project_name = repo_url.split('/')[-1:][0].split('.')[0]
++        project_id = None
++
++        get_project_id_api = f"{base_api_url}/{project_namespace}%2F{project_name}"
++
++        response = session.get(get_project_id_api)
++        if response.status_code == 200:
++            project_id = int(response.json()['id']) or None
++
++        if project_id is not None:
++            info = {'namespace':project_namespace, 'project_name':project_name, 'project_id':project_id}
++            return info
++    except Exception as e:
++        logger.error(f"Ошибка при получении информации gitlab: {e}")
++
++def get_files_from_gitlab(repo_url: str, branch_name: str = 'develop', access_token:str = 'RkKgtYqfifwN4kp11n-s'):
++    file_list = []
++    try:
++        session = requests.Session()
++        session.headers.update({'PRIVATE-TOKEN': access_token})
++        project_id = get_gitlab_project_info(session, repo_url)['project_id']
++        base_api_url = f"https://gitlab.alfastrah.ru/api/v4/projects"
++        get_file_list_api = f"{base_api_url}/{project_id}/repository/tree?ref={branch_name}"
++        response = session.get(get_file_list_api)
++        if response.status_code == 200:
++            file_list = [file_name['name'] for file_name in response.json() if ".md" in file_name['name']]
++    except Exception as e:
++        logger.error(f"Ошибка при получении списка файлов:{e}")
++    finally:
++        return file_list
++
++def get_acl_from_gitlab(repo_url: str, branch_name: str = 'develop', file_name:str = '', access_token: str = 'RkKgtYqfifwN4kp11n-s'):
++    """Получает acl в формате str из gitlab"""
++    try:
++        session = requests.Session()
++        session.headers.update({'PRIVATE-TOKEN': access_token})
++        project_id = get_gitlab_project_info(session, repo_url)['project_id']
++        get_file_content_api = f"https://alfastrah.ru:@gitlab.alfastrah.ru/api/v4/projects/{project_id}/repository/files/{file_name}?ref={branch_name}"
++        response = session.get(get_file_content_api)
++        if response.status_code == 200:
++            encoded_file_content = response.json()['content']
++            decoded_file_content = base64.b64decode(encoded_file_content).decode('utf-8')
++            return decoded_file_content
++        return
++    except Exception as e:
++        logger.error(f'[ПОЛУЧЕНИЕ md_content] Ошибка: {e}')
++
++def convert_md_to_dict(md_content: str):
++    try:
++        LOCAL_STORAGE = {}
++        result = {}
++        lines = md_content.split('\n')
++
++        current_section = None
++        for idx, line in enumerate(lines):
++            line = line.strip()
++            if line.startswith('##### Описание доступа к ресурсам'):
++                current_section = 'acl_create_info.html'
++                LOCAL_STORAGE[current_section] = []
++
++            elif line.startswith('##### Список внутренних ресурсов'):
++                current_section = 'acl_internal_resources.html'
++                LOCAL_STORAGE[current_section] = []
++
++            elif line.startswith('##### Список DMZ ресурсов'):
++                current_section = 'acl_dmz_resources.html'
++                LOCAL_STORAGE[current_section] = []
++
++            elif line.startswith('##### Список внешних ресурсов'):
++                current_section = 'acl_external_resources.html'
++                LOCAL_STORAGE[current_section] = []
++
++            elif line.startswith('##### Потоки трафика'):
++                current_section = 'acl_traffic.html'
++                LOCAL_STORAGE[current_section] = []
++
++            elif line.startswith('|'):
++                if current_section == 'acl_create_info.html':
++                    parts = [p.strip() for p in line.split('|')[1:-1]]
++                    if re.match('^:--', parts[0]) or parts == contact_column:
++                       continue
++                    LOCAL_STORAGE[current_section].append(parts[1])
++
++                elif current_section in ['acl_internal_resources.html', 'acl_dmz_resources.html', 'acl_external_resources.html', 'acl_traffic.html']:
++                    parts = [p.strip() for p in line.split('|')[1:-1]]
++                    if len(parts) > 0 and re.match('^:--', parts[0]) or parts == standart_column or parts == external_column or parts == traffic_column:
++                        continue
++                    LOCAL_STORAGE[current_section].append(parts)
++
++        result['LOCAL_STORAGE'] = LOCAL_STORAGE
++        return result
++    except Exception as e:
++        logger.error(e)
+
+

@@ -1,0 +1,123 @@
+==== File: accesslist/views.py ====
+@@ -2019,16 +2019,10 @@ def makeAndDownloadMdAndDocx(request, acl_id):
+                 )
+                 file_name = os.path.basename(file_path)
+                 logger.info(f"[MAKE FILE] Получено имя файла:{file_name}")
+-                file_md_abs = os.path.join(
+-                    BASE_DIR, f"static/{file_type}/" + f"{file_name}"
+-                )
+-                if "/" in file_md_abs:
+-                    if "linux" not in sys.platform:
+-                        file_md_abs = file_md_abs.replace("/", "\\")
+                 logger.info(
+-                    f"[MAKE FILE] Сформирован абсолютный путь для скачивания:{file_md_abs}"
++                    f"[MAKE FILE] Сформирован абсолютный путь для скачивания:{file_path}"
+                 )
+-                file = open(file_md_abs, "rb")
++                file = open(file_path, "rb")
+                 file_response = FileResponse(file)
+                 file_response["Content-Disposition"] = (
+                     f'attachment; filename="{file_name}"'
+
+
+==== File: acladmin/settings.py ====
+@@ -156,6 +156,11 @@ STATICFILES_DIRS = [
+     os.path.join(BASE_DIR, "static"),
+ ]
+ 
++MEDIA_URL = "/media/"
++MEDIA_ROOT = os.path.join(BASE_DIR, "media")
++MD_FILE_PATH = "md"
++DOCX_FILE_PATH = "docx"
++
+ if os.name == "nt":
+     LOGPATH = os.path.join(BASE_DIR, "log\\debug.log")
+ else:
+
+
+==== File: acladmin/tasks.py ====
+@@ -39,8 +39,7 @@ def send_acl(acl_id, gitlab_repo_url):
+             f"[acl_portal][Celery send_acl] Не удалось сформировать docx файл:{e}."
+         )
+         return False
+-
+-    docx_url = f"https://acl.vesta.ru/{doc_result[1:]}"
++    docx_url = f"https://acl.vesta.ru/{doc_result[5:]}"
+     send_to_mattermost(
+         f"[acl_portal][Celery send_acl] Старт отправки ACL({acl_object.id}) в omnitracker."
+     )
+
+
+==== File: acladmin/urls.py ====
+@@ -1,6 +1,7 @@
+ from os.path import join
+ 
+ from django.conf import settings
++from django.conf.urls.static import static
+ from django.contrib import admin
+ from django.contrib.staticfiles.urls import staticfiles_urlpatterns
+ from django.urls import include, path, re_path
+@@ -17,7 +18,7 @@ urlpatterns = [
+     path("panel/", include("panel.urls")),
+     path("teams/", include("teams.urls")),
+     path("", include("ownerlist.urls")),
+-]
++] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+ 
+ if settings.DEBUG:
+     urlpatterns += [
+
+
+==== File: ownerlist/utils.py ====
+@@ -1239,9 +1239,15 @@ def make_doc(
+ 
+     try:
+         gitlab_filename = gitlab_filename.split(".")[:-1][0]
+-        APP_FILE = f"static/docx/ACL_{fileuuid}_{gitlab_filename}.docx"
++        APP_FILE = os.path.join(
++            settings.MEDIA_ROOT,
++            f"{settings.DOCX_FILE_PATH}/ACL_{fileuuid}_{gitlab_filename}.docx",
++        )
+     except Exception as e:
+-        APP_FILE = f"static/docx/ACL_{fileuuid}.docx"
++        APP_FILE = os.path.join(
++            settings.MEDIA_ROOT,
++            f"{settings.DOCX_FILE_PATH}/ACL_{fileuuid}.docx",
++        )
+         logger.error(f"Не удалось добавить gitlab_filename в название файла docx:{e}")
+ 
+     doc = Document(TEMPLATE_FILE)
+@@ -1279,9 +1285,8 @@ def make_doc(
+             "docx_download_status",
+             f"Сохраняем файл Application_{fileuuid}",
+         )
+-
+-    doc.save(os.path.join(BASE_DIR, APP_FILE))
+-    return "/" + APP_FILE
++    doc.save(APP_FILE)
++    return APP_FILE
+ 
+ 
+ def is_valid_uuid(uuid_to_test, version=4):
+@@ -1403,7 +1408,9 @@ def create_markdown_file(request, json_data, filename, fileuuid=""):
+         )
+ 
+     try:
+-        file_path = os.path.join(BASE_DIR, f"static/md/{filename}.md")
++        file_path = os.path.join(
++            settings.MEDIA_ROOT, f"{settings.MD_FILE_PATH}/{filename}.md"
++        )
+         with codecs.open(file_path, "w", encoding="utf-8") as file:
+             func_map = {
+                 "acl_create_info.html": md_write_acl_create_info,
+@@ -1423,7 +1430,7 @@ def create_markdown_file(request, json_data, filename, fileuuid=""):
+         update_callback_status(
+             request, fileuuid, "git_upload_status", "The md file Created"
+         )
+-    return f"static/md/{filename}.md"
++    return file_path
+ 
+ 
+ def md_write_acl_create_info(file, data):
+
+

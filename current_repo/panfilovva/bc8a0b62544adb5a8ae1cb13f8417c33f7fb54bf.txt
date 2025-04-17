@@ -1,0 +1,336 @@
+==== File: accesslist/__init__.py ====
+@@ -0,0 +1 @@
++default_app_config = 'accesslist.apps.AccesslistConfig'
+\ No newline at end of file
+
+
+==== File: accesslist/apps.py ====
+@@ -3,3 +3,5 @@ from django.apps import AppConfig
+ 
+ class AccesslistConfig(AppConfig):
+     name = 'accesslist'
++    def ready(self):
++        import accesslist.signals
+\ No newline at end of file
+
+
+==== File: accesslist/signals.py ====
+@@ -0,0 +1,12 @@
++from django.db.models.signals import post_save
++from django.dispatch import receiver
++
++from .models import ACL, ACLGitlabStore
++from acladmin.tasks import send_acl
++
++
++@receiver(post_save, sender=ACL)
++def run_send_acl_task(sender, instance, **kwargs):
++    if instance.status == "APRV":
++        gitlab_repo_url = ACLGitlabStore.objects.get(project=instance.project).gitlab_url
++        send_acl.delay(acl_id=instance.id, gitlab_repo_url=gitlab_repo_url)
+
+
+==== File: accesslist/views.py ====
+@@ -1350,6 +1350,7 @@ def AclRemove(request, *args, **kwargs):
+ 
+ @csrf_exempt
+ def task(request, acl_id) -> bool:
++    return
+     """Функция обработки запросов на выполнение активностей для выполнения обращения"""
+     logger.info(
+         f"[Отправка в omni] Начинается выполнение task для (request,acl_id):({request},{acl_id})"
+
+
+==== File: acladmin/celery.py ====
+@@ -1,6 +1,8 @@
+ import os
+ 
+ from celery import Celery
++from celery.schedules import crontab
++
+ 
+ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "acladmin.settings")
+ 
+@@ -8,4 +10,9 @@ app = Celery("acladmin")
+ app.config_from_object("django.conf:settings", namespace="CELERY")
+ app.autodiscover_tasks()
+ 
+-app.conf.beat_schedule = {}
++app.conf.beat_schedule = {
++    "check-acl-status": {
++        "task": "acladmin.tasks.check_acl_status",
++        "schedule": crontab(minute="*/10"),
++    },
++}
+
+
+==== File: acladmin/tasks.py ====
+@@ -0,0 +1,99 @@
++import json
++import os
++
++from celery import shared_task
++from django.apps import apps
++
++from acladmin import settings
++from ownerlist.utils import make_doc, celery_send_omnitracker, GitWorker, \
++    create_markdown_file, check_acl_in_omni, send_to_mattermost
++
++
++@shared_task
++def send_acl(acl_id, gitlab_repo_url):
++    # 1 Создаём docx файл
++    ACL = apps.get_model('accesslist', "ACL")
++    acl_object = ACL.objects.get(id=acl_id)
++    acl_data_set = json.loads(acl_object.acltext)
++
++    try:
++        doc_result = make_doc(request=None,
++                              data_set=acl_data_set,
++                              fileuuid=acl_object.id,
++                              gitlab_repo_url=gitlab_repo_url,
++                              gitlab_filename=acl_object.git_filename
++                              )
++    except Exception as e:
++        print(f'[acl_portal][Celery send_acl] Не удалось сформировать docx файл:{e}.')
++        send_to_mattermost(f'[acl_portal][Celery send_acl] Не удалось сформировать docx файл:{e}.')
++        return False
++
++    docx_url = f"https://acl.vesta.ru/{doc_result[1:]}"
++
++    # 2 Отправляем docx файл в omnitracker
++    task_id = celery_send_omnitracker(sender=acl_object.owner.email,
++                                      title=f'SH0458 Запрос на предоставление доступа согласован: {str(acl_object.approve.first().get_full_name())}',
++                                      text=f'Прошу предоставить сетевой доступ, согласно ACL. Согласование владельца ресурса во вложении. Ссылка на ACL :https://acl.vesta.ru/acl/info/{str(acl_object.id)}',
++                                      attach=docx_url,
++                                      uuid=acl_object.id
++                                      )
++
++    if task_id is None:
++        print(f"[acl_portal][Celery send_acl] Ошибка: Заявку({acl_object.id}) Не удалось отправить в omnitracker.")
++        send_to_mattermost(f"[acl_portal][Celery send_acl] Ошибка: Заявку({acl_object.id}) Не удалось отправить в omnitracker.")
++        return False
++
++    acl_object.taskid = task_id
++    acl_object.status = "JOB"
++    acl_object.save()
++
++    # 3 Создаём md файл
++    filename_without_extension = os.path.splitext(acl_object.git_filename)[0]
++    md_file = create_markdown_file(request=None,
++                                   json_data=acl_data_set,
++                                   filename=filename_without_extension,
++                                   fileuuid=acl_object.id)
++    if md_file == False:
++        print(f"[acl_portal][Celery send_acl] Ошибка: Не удалось сформировать md файл.")
++        send_to_mattermost(f"[acl_portal][Celery send_acl] Ошибка: Не удалось сформировать md файл.")
++    else:
++        file_md_abs = os.path.join(settings.BASE_DIR, md_file)
++        file_md_abs = os.path.normpath(file_md_abs)
++        if os.path.exists(file_md_abs):
++            # 4 Отправляем md файл в gitlab
++            g = GitWorker(
++                None,
++                gitlab_repo_url,
++                PATH_OF_GIT_REPO=None,
++                MDFILE=file_md_abs,
++                taskid=acl_object.id,
++                )
++            if g:
++                g.pull()
++                if g.clone():
++                    g.repo.git.checkout("develop")
++                    f = g.activity(acl_object.git_filename)
++                    if f:
++                        if g.addindex(f):
++                            if g.push(refspec="develop:develop"):
++                                print(f"[acl_portal][Celery send_acl] acl({acl_object.id}) успешно отправлен в gitlab")
++                            else:
++                                print(f"[acl_portal][Celery send_acl] Не удалось отправить acl({acl_object.id}) в gitlab")
++                                send_to_mattermost(f"[acl_portal][Celery send_acl] Не удалось отправить acl({acl_object.id}) в gitlab")
++                g.free()
++        else:
++            print(f"[acl_portal][Celery send_acl] Ошибка: Сформированный md файл не существует. Путь:{file_md_abs}")
++            send_to_mattermost(f"[acl_portal][Celery send_acl] Ошибка: Сформированный md файл не существует. Путь:{file_md_abs}")
++    return task_id
++
++
++@shared_task
++def check_acl_status():
++    ACL = apps.get_model("accesslist", "ACL")
++    acl_objects = ACL.objects.filter(status="JOB")
++    for acl_object in acl_objects:
++        try:
++            check_acl_in_omni(acl_object)
++        except Exception as e:
++            print(f"[acl_portal][Celery check_acl_status] Ошибка проверки статуса acl({acl_object.id}). Ошибка:{e}")
++            send_to_mattermost(f"[acl_portal][Celery check_acl_status] Ошибка проверки статуса acl({acl_object.id}). Ошибка:{e}")
+
+
+==== File: ownerlist/utils.py ====
+@@ -1151,7 +1151,11 @@ def make_doc(
+         print('Не удалось получить gitlab_data_set')
+         gitlab_data_set = data_set
+ 
+-    is_in_session = "ACT_MAKE_DOCX" in request.session
++    if request:
++        is_in_session = "ACT_MAKE_DOCX" in request.session
++    else:
++        is_in_session = None
++
+     TEMPLATE_FILE = os.path.join(BASE_DIR, "templates//ACL.docx")
+     try:
+         fileuuid = data_set["acl_create_info.html"][4] or ""
+@@ -1308,11 +1312,12 @@ def make_doc(
+             if all(cell.text.strip() == '' for cell in row.cells):
+                 table_tmp._tbl.remove(row._tr)
+ 
+-    if "taskid" in request.session:
+-        if request.session["taskid"] != "":
+-            p = doc.add_paragraph(request.session["taskid"])
+-            table = doc.tables[0]
+-            table._element.addnext(p._p)
++    if is_in_session:
++        if "taskid" in request.session:
++            if request.session["taskid"] != "":
++                p = doc.add_paragraph(request.session["taskid"])
++                table = doc.tables[0]
++                table._element.addnext(p._p)
+ 
+     if is_in_session:
+         update_callback_status(
+@@ -1429,7 +1434,8 @@ def table(records, fields, headings=None, alignment=None, file=None):
+ def create_markdown_file(request, json_data, filename, fileuuid=""):
+     """ Создает markdown-файл из JSON-данных """
+     print("[create_markdown_file] Create md")
+-    update_callback_status(request, fileuuid, "git_upload_status", "Создание md файла")
++    if request:
++        update_callback_status(request, fileuuid, "git_upload_status", "Создание md файла")
+ 
+     try:
+         file_path = os.path.join(BASE_DIR, f"static/md/{filename}.md")
+@@ -1448,8 +1454,8 @@ def create_markdown_file(request, json_data, filename, fileuuid=""):
+     except Exception as e:
+         md_handle_error(filename, fileuuid, e)
+         return False
+-
+-    update_callback_status(request, fileuuid, "git_upload_status", "The md file Created")
++    if request:
++        update_callback_status(request, fileuuid, "git_upload_status", "The md file Created")
+     return f"/static/md/{filename}.md"
+ 
+ 
+@@ -2864,4 +2870,109 @@ def get_project_desc_from_git(session=None, project_id=""):
+             logger.info("Атрибут project_description не найден в gitlab.")
+     except Exception:
+         logger.error("Ошибка: не удалось получить описание проекта из gitlab.")
+-    return project_desc
+\ No newline at end of file
++    return project_desc
++
++
++def celery_send_omnitracker(sender, title, text, attach, uuid=None):
++    bodyNotEncoded = """<?xml version="1.0" encoding="utf-8"?>
++                <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:s="http://www.w3.org/2001/XMLSchema" xmlns:tns="http://www.omninet.de/OtWebSvc/v1">
++        <soap:Body>
++            <tns:InvokeScript>
++               <tns:Script name="OmniAPI" runAt="Server">
++                    <tns:Parameters>
++                        <tns:StringVal name='strFunction'>CreateIncidentFromTemplateWithAttachmentAndExternalNumber</tns:StringVal>
++                        <tns:StringVal name='strEMail'>{}</tns:StringVal>
++                        <tns:StringVal name='strTitle'>{}</tns:StringVal>
++                        <tns:StringVal name='strDescription'>{}</tns:StringVal>
++                        <tns:StringVal name='strTemplateCode'>SH0458</tns:StringVal>
++                        <tns:StringVal name='strExternalNumber'>{}</tns:StringVal>
++                        <tns:StringVal name='strAttachmentPath'>{}</tns:StringVal>
++                    </tns:Parameters>
++                </tns:Script>
++            </tns:InvokeScript>
++        </soap:Body>
++        </soap:Envelope>
++        """.format(sender, title, text, str(uuid), attach)
++
++    body = bodyNotEncoded.encode("utf-8")
++
++    try:
++        auth = HttpNtlmAuth("{}\\{}".format(settings.LDAP_AUTH_CONNECTION_DOMAIN, settings.LDAP_AUTH_CONNECTION_USERNAME),
++                            settings.LDAP_AUTH_CONNECTION_PASSWORD)
++    except Exception as e:
++        print(f"Ошибка авторизации LDAP: {e}")
++    result = None
++
++    for i in range(settings.ATTEMPS):
++        try:
++            res = requests.post(settings.OMNITRACKER_URL,
++                                body,
++                                headers=OMNI_HTTP_HEADERS,
++                                timeout=settings.TIMEOUT,
++                                auth=auth,
++                                )
++
++            if res and res.status_code == 200:
++                result = res.text
++                if result and len(result) > 3:
++                    result = result.split('strResponse">')
++                    if len(result) > 1:
++                        result = result[1].split("</")[0]
++                    else:
++                        result = res.text.split("strResponse>")
++                        if len(result) > 1:
++                            result = result[1].split("</")[0]
++                        else:
++                            send_to_mattermost(
++                                f"[TRACE] Сервер omni вернул неправильный ответ: {res.text}"
++                                f"Попытка номер: {i}",
++                                f"Ссылка на ACL :https://acl.vesta.ru/acl/info/{str(uuid)}",
++                            )
++                            result = None
++                return result
++            else:
++                if res.status_code == 401 and not auth:
++                    try:
++                        auth = HttpNtlmAuth(f"{settings.LDAP_AUTH_CONNECTION_DOMAIN}\\{settings.LDAP_AUTH_CONNECTION_USERNAME}",
++                                            settings.LDAP_AUTH_CONNECTION_PASSWORD,
++                                            )
++                    except Exception as e:
++                        send_to_mattermost(f"Ошибка авторизации LDAP: {e}")
++                if i >= settings.ATTEMPS:
++                    break
++                time.sleep(i)
++
++        except requests.Timeout:
++            send_to_mattermost(
++                "Подключение не удалось по таймауту (Timeout).",
++                f"Попытка подключения номер: {i}.",
++                f"OMNITRACKER_URL: {settings.OMNITRACKER_URL}",
++                f"Ссылка на ACL: https://acl.vesta.ru/acl/info/{str(uuid)}",
++            )
++        except requests.ConnectionError:
++            send_to_mattermost(
++                "Сервис не отвечает (Connection Error).",
++                f"Попытка подключения номер: {i}.",
++                f"OMNITRACKER_URL: {settings.OMNITRACKER_URL}",
++                f"Ссылка на ACL: https://acl.vesta.ru/acl/info/{str(uuid)}",
++            )
++        except Exception as e:
++            send_to_mattermost(
++                f"Ошибка Omni request: {e}.",
++                f"Попытка номер: {i}.",
++                f"OMNITRACKER_URL: {settings.OMNITRACKER_URL}",
++                f"Ссылка на ACL: https://acl.vesta.ru/acl/info/ {str(uuid)}",
++            )
++    return result
++
++
++def check_acl_in_omni(acl_object):
++    """ Проверяет acl в omnitracker на наличие заявки """
++    acl_taskid = acl_object.taskid
++    if acl_taskid:
++        acl_status = acl_object.status
++        omni_acl_status, omni_http_status = omni_check_status(acl_taskid)
++        if acl_status != omni_acl_status:
++            acl_object.status = omni_acl_status
++            acl_object.save(update_fields=["status"])
++        return omni_acl_status
+
+

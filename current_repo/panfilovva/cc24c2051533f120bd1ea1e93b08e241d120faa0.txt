@@ -1,0 +1,72 @@
+==== File: static/js/main.js ====
+@@ -406,6 +406,7 @@ $(document).ready(function(){
+ 
+     $("#upload_file_form, #upload_template").on('submit', function (e){
+                e.preventDefault();
++               let formId = e.target.id;
+                let form = $(this);
+                let ActionUrl = e.currentTarget.action;
+                let MessageType = '';
+@@ -418,32 +419,36 @@ $(document).ready(function(){
+                  contentType: false,
+                  processData: false,
+                  beforeSend:function(){
+-                     var gitlab_project_select = document.getElementById('gitlab_proj_upload_dropdown');
+-                     var gitlab_project_name = gitlab_project_select.options[gitlab_project_select.selectedIndex].value;
+-                     if(gitlab_project_name != "" || gitlab_project_name != "Не выбрано"){
+-                        localStorage.setItem('uploaded_project_name_docx', gitlab_project_name)
+-                     }
+-                     if(document.getElementById('acl_filename').value != ""){
+-                        git_filename = document.getElementById('acl_filename').value;
+-                        localStorage.setItem('uploaded_filename_docx', git_filename);
+-                     }
+-                     if(document.getElementById('department').value != "" && document.getElementById('teamid').value != ""){
+-                         localStorage.setItem('uploaded_department', document.getElementById('department').value);
+-                         localStorage.setItem('uploaded_teamid', document.getElementById('teamid').value);
++                     if(formId == "upload_template"){
++                         var gitlab_project_select = document.getElementById("gitlab_proj_upload_dropdown");
++                         var gitlab_project_name = gitlab_project_select.options[gitlab_project_select.selectedIndex].value;
++                         if(gitlab_project_name != "" || gitlab_project_name != "Не выбрано"){
++                            localStorage.setItem("uploaded_project_name_docx", gitlab_project_name)
++                         }
++                         if(document.getElementById("acl_filename").value != ""){
++                            git_filename = document.getElementById("acl_filename").value;
++                            localStorage.setItem("uploaded_filename_docx", git_filename);
++                         }
++                         if(document.getElementById("department").value != "" && document.getElementById("teamid").value != ""){
++                             localStorage.setItem("uploaded_department", document.getElementById("department").value);
++                             localStorage.setItem("uploaded_teamid", document.getElementById("teamid").value);
++                         }
+                      }
++
++
+                      $(".input--file--label, form svg").hide();
+                      if ($(form > "spinner-border").length == 0)
+                         $(form).append("<div class='spinner-border text-danger' role='status'><span class='sr-only'>Loading...</span></div>");
+                      else
+-                         $(form > "spinner-border").css({'display': 'block'});
++                         $(form > "spinner-border").css({"display": "block"});
+                  } ,
+                  success : function(result){
+-                   if (typeof result!= 'undefined' && result !== null && result.length > 0)
++                   if (typeof result!= "undefined" && result !== null && result.length > 0)
+                    {
+                       if (IsJsonString(result))
+                       {
+                           result = JSON.parse(result);
+-                          MessageType = result.hasOwnProperty('status') ? 2 : 1;
++                          MessageType = result.hasOwnProperty("status") ? 2 : 1;
+                           $(".wrapper").append("<script>ShowNotify("+MessageType+", \""+Object.values(result)[0]+"\");<\/script>");
+                       } else
+                       {
+@@ -451,7 +456,7 @@ $(document).ready(function(){
+                       }
+ 
+ 
+-                      if (MessageType == 2 && window.location.href.indexOf('info') >0)
++                      if (MessageType == 2 && window.location.href.indexOf("info") > 0)
+                       {
+                           refresh();
+                       }
+
+

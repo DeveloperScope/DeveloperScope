@@ -1,0 +1,33 @@
+==== File: accesslist/templates/acl_create_info.html ====
+@@ -609,6 +609,7 @@
+         if(document.getElementById('acl_filename').value == ""){
+             document.getElementById('acl_filename').value = localStorage.getItem('uploaded_filename_docx');
+             localStorage.removeItem('uploaded_filename_docx');
++            $("input:checkbox[name='action_make_git']").prop('checked', true);
+             document.getElementById('save-form-btn').click();
+         }
+     }
+
+
+==== File: static/js/main.js ====
+@@ -741,11 +741,14 @@ $("#flexAgreementCheck").click(function(){
+         if ($(this).prop('checked'))
+         {
+             document.getElementById('check_file_to_push').value = document.getElementById('acl_filename').value;
+-            if (($(".git__label").text() == '') || ($("input:text[name='git_url']").text() == ''))
+-            {
+-               //$("input:checkbox[name='action_make_git']").prop('checked', false);
+-                $("input:checkbox[name='action_make_git']").removeAttr('checked');
++            if(document.getElementById('acl_filename').value == "" || document.getElementById('acl_filename').value == 'Нет'){
++                ShowNotify(idx=0, text='Не удалось найти Имя файла git');
+             }
++//            if (($(".git__label").text() == '') || ($("input:text[name='git_url']").text() == ''))
++//            {
++//               //$("input:checkbox[name='action_make_git']").prop('checked', false);
++////                $("input:checkbox[name='action_make_git']").removeAttr('checked');
++//            }
+ 
+            $(".modal-git").modal('show');
+            $("input:text[id='check_file_to_push']").focus();
+
+

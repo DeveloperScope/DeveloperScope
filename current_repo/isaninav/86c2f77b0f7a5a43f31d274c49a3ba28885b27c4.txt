@@ -1,0 +1,74 @@
+==== File: accesslist/templates/acl_create_info.html ====
+@@ -455,11 +455,11 @@
+        let git_url = $("input:text[name='git_url']").val();
+        git_url = $.trim(git_url);
+        SetGitURL(git_url);
+-       $.post(`/acl/act/${window.acl_id}/git/add/`,{'git_url': git_url}).fail(function(){
+-           ShowNotify(0, 'Ошибка');
+-       }).done(function(){
+-           ShowNotify(2, 'Данные изменены');
+-       });
++       {#$.post(`/acl/act/${window.acl_id}/git/add/`,{'git_url': git_url}).fail(function(){#}
++           {#ShowNotify(0, 'Ошибка');#}
++       {#}).done(function(){#}
++           {#ShowNotify(2, 'Данные изменены');#}
++       {#});#}
+     });
+ 
+     });
+@@ -477,20 +477,20 @@
+             {
+                 if (act == 'git') return false;
+ 
+-                $.post(`/acl/act/${window.acl_id}/${act}/add/`,function(){}).fail(function(){
+-                    ShowNotify(0, 'Ошибка');
+-                }).done(function(){
+-                    ShowNotify(2, 'Данные изменены');
+-                });
++                {#  $.post(`/acl/act/${window.acl_id}/${act}/add/`,function(){}).fail(function(){#}
++                {#    ShowNotify(0, 'Ошибка');#}
++                {#}).done(function(){#}
++                {#    ShowNotify(2, 'Данные изменены');#}
++                {#});#}
+                // console.log('Add: %s', act);
+                // console.log($('.modal-git input[name="git_url"]').text());
+             } else
+             {
+-                $.post(`/acl/act/${window.acl_id}/${act}/remove/`,function(){}).fail(function(){
+-                    ShowNotify(0, 'Ошибка');
+-                }).done(function(){
+-                    ShowNotify(2, 'Данные изменены');
+-                });
++                {#  $.post(`/acl/act/${window.acl_id}/${act}/remove/`,function(){}).fail(function(){#}
++                {#    ShowNotify(0, 'Ошибка');#}
++                {#}).done(function(){#}
++                {#    ShowNotify(2, 'Данные изменены');#}
++                {#});#}
+                 //console.log('Remove: %s', act);
+                 //console.log($('.modal-git input[name="git_url"]').text());
+             }
+
+
+==== File: ownerlist/utils.py ====
+@@ -900,7 +900,6 @@ def make_doc(request=None, data_set={}, fileuuid='')->str:
+     import urllib
+     is_in_session = 'ACT_MAKE_DOCX' in request.session
+     TEMPLATE_FILE = os.path.join(BASE_DIR, 'templates//ACL.docx')
+-
+     try:
+         fileuuid = request.session['LOCAL_STORAGE']['acl_create_info.html'][4] or ""
+         if len(fileuuid) > 10:
+@@ -1593,7 +1592,10 @@ def GetNumberFromMask(mask=''):
+ 
+ def send_onmitracker(sender, title, text, attach, proxy=None, fake=None, request=None, uid=None):
+     """Функция для отправки обращения напрямую в SD  получения номера зарегистрированного обращения"""
+-
++    try:
++        send_to_mattermost(f"[SEND OMNITRACKER] sender: {sender}; title:{title};")
++    except Exception as e:
++        logger.warning(f"[SEND_TO_MATTERMOST] {e}")
+     bodyNotEncoded ="""<?xml version="1.0" encoding="utf-8"?>
+     <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:s="http://www.w3.org/2001/XMLSchema" xmlns:tns="http://www.omninet.de/OtWebSvc/v1">
+     <soap:Body>
+
+

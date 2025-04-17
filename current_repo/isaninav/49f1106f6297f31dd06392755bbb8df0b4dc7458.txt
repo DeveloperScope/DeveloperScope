@@ -1,0 +1,132 @@
+==== File: accesslist/templates/acl_external_resources.html ====
+@@ -18,6 +18,7 @@
+                 <thead>
+                      <tr>
+                          <th>IP-адрес источника</th>
++                         <th>Полное доменное имя источника</th>
+                          <th style="min-width: 160px;">Префикс-сети <span class="help-icon-mask"><i class="far fa-question-circle" style="cursor: pointer;margin-left: 5px"></i></span></th>
+                          <th>Описание</th>
+                          <th></th>
+@@ -28,53 +29,60 @@
+                 {% if LOCAL_STORAGE|length > 0 %}
+                 {% for item in LOCAL_STORAGE %}
+                      <tr>
+-                                <td class="">
+-                                    <input type="text" value="{{item.0}}" class="form-control input__ip__external" name="input__ip_{% random_int 0 100 %}" autofocus minlength="4" maxlength="128" size="15" pattern="^((\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.){3}(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])|([a-z0-9]+(-[a-z0-9]+)*\.)+[a-z]{2,}$" required>
+-                                    <span class="validity"></span>
+-                                </td>
+-
+-                                <td class="">
+-                                     <div class="input-group mb-2">
+-                                            <div class="input-group-prepend">
+-                                                <div class="input-group-text">/</div>
+-                                            </div>
+-                                       <input type="number" value="{{item.1}}" class="form-control" min="1" max="32" name="input__mask_{% random_int 0 100 %}"  style="max-width: 110px;" pattern="^([0-9]){1,2}$" required>
+-                                        <span class="validity"></span>
+-                                      </div>
+-                                </td>
+-                                <td>
+-                                        <textarea class="form-control" rows="1" cols="40"  name="input_descr_{% random_int 0 100 %}" pattern=".{3,}" required>{{item.2}}</textarea>
+-                                        <span class="validity"></span>
+-                                </td>
+-                                <td>
+-                                            <button class="btn btn-danger btn-sm btn-action btn-action-rm ml-1" type="button">-</button>
+-                                            <button class="btn btn-success btn-sm btn-action btn-action-add ml-1" type="button">+</button>
+-                                </td>
++                         <td class="">
++                             <input type="text" value="{{item.0}}" class="form-control input__ip__external" name="input__ip_{% random_int 0 100 %}" autofocus minlength="4" maxlength="128" size="15" pattern="^((\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.){3}(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])|([a-z0-9]+(-[a-z0-9]+)*\.)+[a-z]{2,}$" required>
++                             <span class="validity"></span>
++                         </td>
++                         <td class="">
++                            <input type="text" value="{{item.1}}" class="form-control" placeholder="myserver.example.com" title="myserver.example.com" name="input_fqnd_{% random_int 0 100 %}">
++                            <span class="validity"></span>
++                        </td>
++                         <td class="">
++                             <div class="input-group mb-2">
++                                 <div class="input-group-prepend">
++                                     <div class="input-group-text">/</div>
++                                 </div>
++                                 <input type="number" value="{{item.2}}" class="form-control" min="1" max="32" name="input__mask_{% random_int 0 100 %}"  style="max-width: 110px;" pattern="^([0-9]){1,2}$" required>
++                                 <span class="validity"></span>
++                             </div>
++                         </td>
++                         <td>
++                             <textarea class="form-control" rows="1" cols="40"  name="input_descr_{% random_int 0 100 %}" pattern=".{3,}" required>{{item.3}}</textarea>
++                             <span class="validity"></span>
++                         </td>
++                         <td>
++                             <button class="btn btn-danger btn-sm btn-action btn-action-rm ml-1" type="button">-</button>
++                             <button class="btn btn-success btn-sm btn-action btn-action-add ml-1" type="button">+</button>
++                         </td>
+                      </tr>
+                 {% endfor %}
+                 {% else %}
+-                     <tr> <td class="">
+-                                    <input type="text" class="form-control input__ip__external" placeholder="173.194.222.0" name="input__ip" autofocus minlength="4" maxlength="128" size="15" pattern="^((\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.){3}(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])|([a-z0-9]+(-[a-z0-9]+)*\.)+[a-z]{2,}$" required>
+-                                    <span class="validity"></span>
+-                                </td>
+-
+-                                <td class="">
+-                                     <div class="input-group mb-2">
+-                                            <div class="input-group-prepend">
+-                                                <div class="input-group-text">/</div>
+-                                            </div>
+-                                       <input type="number" value="{{item.1}}" class="form-control input__ip__external" placeholder="32" min="1" max="32" name="input__mask"  style="max-width: 110px;" pattern="^([0-9]){1,2}$" required>
+-                                        <span class="validity"></span>
+-                                      </div>
+-                                </td>
+-                                <td>
+-                                        <textarea class="form-control" placeholder="Сервисы google" rows="1" cols="40"  name="input_descr" pattern=".{3,}" required>{{item.3}}</textarea>
+-                                        <span class="validity"></span>
+-                                </td>
+-                                <td>
+-                                            <button class="btn btn-danger btn-sm btn-action btn-action-rm ml-1" type="button">-</button>
+-                                            <button class="btn btn-success btn-sm btn-action btn-action-add ml-1" type="button">+</button>
+-                                </td>
++                     <tr>
++                         <td class="">
++                             <input type="text" class="form-control input__ip__external" placeholder="173.194.222.0" name="input__ip" autofocus minlength="4" maxlength="128" size="15" pattern="^((\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.){3}(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])|([a-z0-9]+(-[a-z0-9]+)*\.)+[a-z]{2,}$" required>
++                             <span class="validity"></span>
++                         </td>
++                        <td class="">
++                            <input type="text" value="{{item.1}} " class="form-control" placeholder="myserver.example.com" title="myserver.example.com" name="input_fqnd_{% random_int 0 100 %}">
++                            <span class="validity"></span>
++                        </td>
++                         <td class="">
++                             <div class="input-group mb-2">
++                                 <div class="input-group-prepend">
++                                     <div class="input-group-text">/</div>
++                                 </div>
++                                 <input type="number" value="{{item.2}}" class="form-control input__ip__external" placeholder="32" min="1" max="32" name="input__mask"  style="max-width: 110px;" pattern="^([0-9]){1,2}$" required>
++                                 <span class="validity"></span>
++                             </div>
++                         </td>
++                         <td>
++                             <textarea class="form-control" placeholder="Сервисы google" rows="1" cols="40"  name="input_descr" pattern=".{3,}" required>{{item.3}}</textarea>
++                             <span class="validity"></span>
++                         </td>
++                         <td>
++                             <button class="btn btn-danger btn-sm btn-action btn-action-rm ml-1" type="button">-</button>
++                             <button class="btn btn-success btn-sm btn-action btn-action-add ml-1" type="button">+</button>
++                         </td>
+                      </tr>
+                 {% endif %}
+                 </tbody>
+@@ -84,6 +92,15 @@
+  <input type="submit" class="btn btn-success" value="Сохранить и продолжить">
+ </div>
+ </form>
++<div class="col-12 pb-3" style="padding-top: 30px">
++    <div class="card border-danger" style="max-width: 655px;">
++        <div class="card-header card-header bg-danger text-white" style="background-color: #fe0808b0 !important;">Обратите внимание*</div>
++          <div class="card-body">
++            <p class="card-text">Используйте поле "Полное доменное имя источника" только в случае если нет возможности использовать конкретный ip адрес</p>
++          </div>
++    </div>
++</div>
++
+ <script>
+     $(".post-sidebar").removeClass("d-none");
+ </script>
+
+

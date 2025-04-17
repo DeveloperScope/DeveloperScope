@@ -1,0 +1,440 @@
+==== File: accesslist/templates/acl_traffic.html ====
+@@ -190,7 +190,7 @@
+                                         type="checkbox"
+                                         name="acl_traffic[0][reserve]"
+                                         value="{{item.reserve}}"
+-                                        title="Эт��т доступ резервный?"
++                                        title="Этот доступ резервный?"
+                                         {% if item.reserve %}checked{% endif %}
+                                         onchange="this.value=this.checked">
+                               {% elif "input__ip_source" in widget %}
+@@ -266,6 +266,14 @@
+                   {% endif %}
+                 </tbody>
+             </table>
++            <div class="d-flex justify-content-end mb-3" style="min-width: 95%!important;">
++              <button class="btn btn-success btn-add-template" 
++                      type="button" 
++                      data-toggle="tooltip" 
++                      title="Добавить из шаблона">
++                  Добавить из шаблона
++              </button>
++            </div>  
+         </div>
+ <div class="d-flex justify-content-end mt-3 pt-3 bottom-form-save" style="min-width: 95%!important;">
+  <input type="submit" class="btn btn-success" value="Сохранить и продолжить">
+@@ -281,6 +289,54 @@
+           </div>
+     </div>
+ </div>
++
++<div class="modal modal-template" tabindex="-1" role="dialog">
++  <div class="modal-dialog" role="document">
++      <div class="modal-content">
++          <div class="modal-header">
++              <h5 class="modal-title">Выбор шаблона</h5>
++              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
++                  <span aria-hidden="true">&times;</span>
++              </button>
++          </div>
++          <div class="modal-body">
++              <div class="form-group">
++                  <label for="templateSelect">Выберите шаблон</label>
++                  <select class="form-control mb-3" id="templateSelect">
++                      <option value="">Загрузка шаблонов...</option>
++                  </select>
++
++                  <div class="template-fields" style="display: none;">
++                      <div class="form-group">
++                          <label for="templateDomain">Доменное имя</label>
++                          <input type="text" 
++                                 class="form-control mb-2" 
++                                 id="templateDomain" 
++                                 placeholder="Введите доменное имя"
++                                 disabled>
++                      </div>
++
++                      <div class="form-group">
++                          <label for="templateIP">IP-адрес</label>
++                          <input type="text" 
++                                 class="form-control" 
++                                 id="templateIP" 
++                                 placeholder="Введите IP-адрес"
++                                 pattern="^(any|((\d{1,2}|1\d\d|2[0-4]\d|25[0-5]).){3}(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])(/\d{1,2})?)$"
++                                 title="Формат: xxx.xxx.xxx.xxx или any"
++                                 disabled>
++                      </div>
++                  </div>
++              </div>
++          </div>
++          <div class="modal-footer">
++              <button type="button" class="btn btn-secondary" data-dismiss="modal">Закрыть</button>
++              <button type="button" class="btn btn-primary" id="applyTemplate">Применить</button>
++          </div>
++      </div>
++  </div>
++</div>
++
+ <script>
+     {#$(".bottom-form-save > .btn-success").click(function(e) {#}
+     {#    let result = true;#}
+@@ -434,5 +490,218 @@
+         }
+       });
+ </script>
++
++<script>
++  $(document).ready(function() {
++    const TEMPLATE_API_URL = '/acl/api/templates/files/';
++
++    $('#applyTemplate').on('click', function() {
++        const selectedTemplateId = $('#templateSelect').val();
++        const domain = $('#templateDomain').val();
++        const ip = $('#templateIP').val();
++
++        if (!selectedTemplateId) {
++            alert('Пожалуйста, выберите шаблон');
++            return;
++        }
++
++        applyTemplateToRow({
++            templateId: selectedTemplateId,
++            domain: domain,
++            ip: ip
++        });
++    });
++
++    $('.modal-template').on('hidden.bs.modal', function() {
++        resetTemplateForm();
++    });
++
++    function resetTemplateForm() {
++        $('#templateSelect').val('');
++        $('#templateDomain').val('').prop('disabled', true);
++        $('#templateIP').val('').prop('disabled', true);
++        $('.template-fields').hide();
++    }
++
++    $('.btn-add-template').click(async function() {
++        resetTemplateForm();
++        
++        try {
++            const response = await fetch(TEMPLATE_API_URL);
++            if (!response.ok) {
++                throw new Error(`HTTP error! status: ${response.status}`);
++            }
++
++            const templates = await response.json();
++            
++            let select = $('#templateSelect');
++            select.empty();
++            select.append('<option value="">Выберите шаблон</option>');
++            
++            templates.forEach(template => {
++                select.append(`<option value="${template.id}">${template.name}</option>`);
++            });
++
++            $('.modal-template').modal('show');
++            
++        } catch (error) {
++            console.error('Ошибка при загрузке списка шаблонов:', error);
++            alert('Ошибка при загрузке списка шаблонов');
++        }
++    });
++
++    $('#templateSelect').change(async function() {
++        const selectedValue = $(this).val();
++        const templateFields = $('.template-fields');
++        const templateInputs = $('#templateDomain, #templateIP');
++        const domainLabel = $('label[for="templateDomain"]');
++        const ipLabel = $('label[for="templateIP"]');
++        
++        if (selectedValue) {
++            try {
++                const response = await fetch(`${TEMPLATE_API_URL}${selectedValue}/`);
++                const templateData = await response.json();
++                
++                const firstRecord = templateData[0] || {};
++                
++                const hasSourceData = firstRecord.sourse_domain || firstRecord.sourse_ip;
++                const hasDestData = firstRecord.destination_domain || firstRecord.destination_ip;
++                
++                if (!hasSourceData && hasDestData) {
++                    domainLabel.text('Доменное имя источника');
++                    ipLabel.text('IP-адрес источника');
++                } else {
++                    domainLabel.text('Доменное имя назначения');
++                    ipLabel.text('IP-адрес назначения');
++                }
++                
++                templateFields.slideDown();
++                templateInputs.prop('disabled', false);
++                
++            } catch (error) {
++                console.error('Ошибка при загрузке данных шаблона:', error);
++                alert('Ошибка при загрузке данных шаблона');
++            }
++        } else {
++            templateFields.slideUp();
++            templateInputs.prop('disabled', true).val('');
++        }
++    });
++
++    function applyTemplateToRow(data) {
++        fetch(`${TEMPLATE_API_URL}${data.templateId}/`)
++            .then(response => response.json())
++            .then(templateData => {
++                const firstRecord = templateData[0] || {};
++                const hasSourceData = firstRecord.sourse_domain || firstRecord.sourse_ip;
++                const isSourceTemplate = !hasSourceData;
++
++                const currentTable = $('.table-ip-internal tbody');
++                let lastRow = currentTable.find('tr:last');
++
++                const isLastRowEmpty = !Array.from(lastRow.find('input, textarea')).some(el => el.value);
++                
++                if (!isLastRowEmpty) {
++                    lastRow = lastRow.clone();
++                    lastRow.find('input, textarea').val('');
++                    currentTable.append(lastRow);
++                }
++
++                templateData.forEach((record, index) => {
++                    let newRow;
++                    if (index === 0) {
++                        newRow = lastRow;
++                    } else {
++                        newRow = lastRow.clone();
++                        newRow.find('input, textarea').val('');
++                        currentTable.append(newRow);
++                    }
++
++                    if (isSourceTemplate) {
++                        newRow.find('textarea[name$="[sourse_domain]"]').val(data.domain || '');
++                        newRow.find('input[name$="[sourse_ip]"]').val(data.ip || '');
++                        newRow.find('textarea[name$="[destination_domain]"]').val(record.destination_domain || '');
++                        newRow.find('input[name$="[destination_ip]"]').val(record.destination_ip || '');
++                    } else {
++                        newRow.find('textarea[name$="[sourse_domain]"]').val(record.sourse_domain || '');
++                        newRow.find('input[name$="[sourse_ip]"]').val(record.sourse_ip || '');
++                        newRow.find('textarea[name$="[destination_domain]"]').val(data.domain || '');
++                        newRow.find('input[name$="[destination_ip]"]').val(data.ip || '');
++                    }
++
++                    newRow.find('input[name$="[protocol_port]"]').val(record.protocol_port || '');
++                    newRow.find('textarea[name$="[program_name]"]').val(record.program_name || '');
++                    newRow.find('textarea[name$="[description]"]').val(record.description || '');
++                    newRow.find('input[name$="[reserve]"]').val(record.reserve || false);
++                });
++
++                updateRowIndices();
++
++                $('.modal-template').modal('hide');
++            })
++            .catch(error => {
++                console.error('Ошибка при загрузке данных шаблона:', error);
++                alert('Ошибка при загрузке данных шаблона');
++            });
++    }
++
++    function updateRowIndices() {
++        // Обновляем индексы строк и удаляем дублирующие строки(только по полному совпадению)
++        
++        const rows = $('.table-ip-internal tbody tr');
++        const uniqueRows = [];
++        const duplicateRows = [];
++
++        rows.each(function() {
++            const currentRow = $(this);
++            const rowData = [];
++
++            currentRow.find('input, textarea').each(function() {
++                rowData.push($(this).val());
++            });
++
++            const isDuplicate = uniqueRows.some(existingRowData => {
++                return existingRowData.every((value, i) => value === rowData[i]);
++            });
++
++            if (!isDuplicate) {
++                uniqueRows.push(rowData);
++            } else {
++                duplicateRows.push(currentRow);
++            }
++        });
++
++        $(duplicateRows.reverse()).each(function() {
++            $(this).remove();
++        });
++
++        $('.table-ip-internal tbody tr').each(function(index) {
++            $(this).find('input, textarea').each(function() {
++                const name = $(this).attr('name');
++                if (name) {
++                    const newName = name.replace(/\[\d+\]/, `[${index}]`);
++                    $(this).attr('name', newName);
++                }
++            });
++        });
++    }
++
++    // Добавляем обработчик для поля доменного имени
++    $('#templateDomain').on('change', function() {
++      const domainInput = $(this);
++      const ipInput = $('#templateIP');
++    
++      if (domainInput.val().trim() === '') {
++        ipInput.val('');
++      } else if ((/^([a-z0-9]+(-[a-z0-9]+)*\.)+[a-z]{2,}$/).test(domainInput.val())) {
++        resolvDomain(domainInput.val(), domainInput).then(function(result) {
++            if (result) {
++                ipInput.val(result);
++                }
++        });
++      }
++    });
++});
++</script>
+ {% endblock %}
+ 
+
+
+==== File: accesslist/urls.py ====
+@@ -198,4 +198,6 @@ urlpatterns = [
+     path("task/<str:acl_id>/", task, name="aclcheck_status_urls"),
+     path("task/<str:acl_id>/status", TaskStatus, name="aclcheck_task_status_urls"),
+     re_path("$^", ACldefault, name="acldefault_urls"),
++    path("api/templates/files/", APITemplatesFilesView.as_view(), name="api_templates_files"),
++    path("api/templates/files/<str:file_id>/", APITemplatesDetailView.as_view(), name="api_templates_detail"),
+ ]
+
+
+==== File: accesslist/utils/__init__.py ====
+
+
+==== File: accesslist/utils/gitlab.py ====
+@@ -0,0 +1,34 @@
++import requests
++from django.conf import settings
++
++HEADERS = {"PRIVATE-TOKEN": settings.GIT_ACCESS_TOKEN}
++PROJECT_ID = 6219
++
++
++def get_templates_files_from_gitlab(branch_name: str = "master"):
++    url = f"https://gitlab.alfastrah.ru/api/v4/projects/{PROJECT_ID}/repository/tree"
++    try:
++        response = requests.get(url, headers=HEADERS, params={"ref": branch_name})
++        if response.status_code == 200:
++            file_list = [
++                {"id": file["id"], "name": file["name"].split(".")[0], "path": file["path"]}
++                for file in response.json()
++                if file["name"].endswith(".json")
++            ]
++            return file_list
++        else:
++            return []
++    except Exception:
++        return []
++
++
++def get_templates_from_gitlab(file_id: int, branch_name: str = "master"):
++    url = f"https://gitlab.alfastrah.ru/api/v4/projects/{PROJECT_ID}/repository/blobs/{file_id}/raw"
++
++    try:
++        response = requests.get(url, headers=HEADERS, params={"ref": branch_name})
++        if response.status_code == 200:
++            return response.json()
++        return None
++    except Exception:
++        return None
+
+
+==== File: accesslist/views.py ====
+@@ -38,6 +38,10 @@ from rest_framework.response import Response
+ from rest_framework.views import APIView
+ from rest_framework_api_key.permissions import HasAPIKey
+ 
++from accesslist.utils.gitlab import (
++    get_templates_files_from_gitlab,
++    get_templates_from_gitlab,
++)
+ from ownerlist.models import Iplist, Owners
+ from ownerlist.utils import (
+     BASE_DIR,
+@@ -2127,7 +2131,9 @@ class APIACLInfoView(APIView):
+                         if ip_source == item.get(
+                             "sourse_ip"
+                         ) and ip_destination == item.get("destination_ip"):
+-                            row_port = item.get("protocol_port").split("/")[1].replace(" ", "")
++                            row_port = (
++                                item.get("protocol_port").split("/")[1].replace(" ", "")
++                            )
+                             if re.match(r"^\d+$", row_port):
+                                 if row_port == port:
+                                     result = True
+@@ -2159,3 +2165,50 @@ class APIACLInfoView(APIView):
+             }
+         ).data
+         return Response(data=response, status=status.HTTP_200_OK)
++
++
++class APITemplatesFilesView(APIView):
++
++    class OutputSerializer(serializers.Serializer):
++        id = serializers.CharField()
++        name = serializers.CharField()
++        path = serializers.CharField()
++
++    @swagger_auto_schema(
++        operation_description="Получение списка шаблонов",
++        responses={
++            200: OutputSerializer,
++            400: "Bad Request",
++        },
++        tags=["api/templates/files/"],
++    )
++    def get(self, request):
++        templates_files = get_templates_files_from_gitlab()
++        serializer = self.OutputSerializer(templates_files, many=True)
++        return Response(data=serializer.data, status=status.HTTP_200_OK)
++
++
++class APITemplatesDetailView(APIView):
++
++    class OutputSerializer(serializers.Serializer):
++        sourse_ip = serializers.IPAddressField(protocol="IPv4", required=True)
++        sourse_domain = serializers.CharField()
++        destination_ip = serializers.IPAddressField(protocol="IPv4", required=True)
++        destination_domain = serializers.CharField()
++        protocol_port = serializers.CharField()
++        program_name = serializers.CharField()
++        description = serializers.CharField()
++        reserve = serializers.BooleanField()
++
++    @swagger_auto_schema(
++        operation_description="Получение шаблона",
++        responses={
++            200: OutputSerializer,
++            400: "Bad Request",
++        },
++        tags=["api/templates/files/"],
++    )
++    def get(self, request, file_id):
++        template = get_templates_from_gitlab(file_id)
++        serializer = self.OutputSerializer(template, many=True)
++        return Response(data=serializer.data, status=status.HTTP_200_OK)
+
+
+==== File: ownerlist/utils.py ====
+@@ -2677,8 +2677,6 @@ def SendMessageToApprove(acl_id, acl_owner, user, token=""):
+ 
+ 
+ def send_to_mattermost(*messages):
+-    print("SWND TO MM", messages)
+-    return
+     try:
+         text = ""
+         for message in messages:
+
+

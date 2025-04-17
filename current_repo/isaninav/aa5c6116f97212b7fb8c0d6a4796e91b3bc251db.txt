@@ -1,0 +1,12 @@
+==== File: static/js/main.js ====
+@@ -920,7 +920,7 @@ function RequestHandler(data = '', int_status = 0)
+     if ($(".list-group-item-git").length > 0 && $(".list-group-item-md").length == 0) //.text-danger
+         if (status.hasOwnProperty('git_upload_file'))
+             {
+-                let $el = "<p class='text-secondary'>Мы не смогли отправить файл в git, но вы можете скачать md-файл</p>" + status['git_upload_file']['done'];
++                let $el = "<p class='text-secondary'>Вы можете скачать md-файл</p>" + status['git_upload_file']['done'];
+                 $('<li class="list-group-item list-group-item-md border-0" style="display: inline-flex;text-align: center;border:1px dashed #ccc!important;"><div style="width: 285px;text-align:left!important;"><p class="card-text text-warning">Обратите внимание!</p></div><div class="done">\n' +
+                                                  $el + '</div></li>').insertAfter(".list-group-item-git");
+             }
+
+

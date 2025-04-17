@@ -1,0 +1,12 @@
+==== File: acladmin/tasks.py ====
+@@ -105,3 +105,8 @@ def check_acl_status():
+             print(f"[acl_portal][Celery check_acl_status] Ошибка проверки статуса acl({acl_object.id}). Ошибка:{e}")
+             send_to_mattermost(f"[acl_portal][Celery check_acl_status] Ошибка проверки статуса acl({acl_object.id}). Ошибка:{e}")
+     send_to_mattermost(f"[acl_portal][Celery check_acl_status] Задача успешно отработала.")
++
++
++@shared_task
++def test_task():
++    print("Test task executed")
+
+

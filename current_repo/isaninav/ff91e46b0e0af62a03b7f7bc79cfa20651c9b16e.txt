@@ -1,0 +1,71 @@
+==== File: accesslist/templates/acl_create_info.html ====
+@@ -215,7 +215,7 @@
+               </div>
+ 
+               <div class="m-2 float-right">
+-                   <input type="submit" class="btn btn-success" value="Сохранить и продолжить">
++                   <input type="submit" class="btn btn-success" id="save-form-btn" value="Сохранить и продолжить">
+ {#                  {% if status == 'APRV' %}#}
+ {#                   <a class="btn btn-primary" value="">Сформировать обращение</a>#}
+ {#                  {% endif %}#}
+@@ -397,7 +397,7 @@
+               </div>
+ 
+               <div class="m-2 float-right">
+-                   <input type="submit" class="btn btn-success" value="Сохранить и продолжить">
++                   <input type="submit" class="btn btn-success" id="save-form-btn" value="Сохранить и продолжить">
+               </div>
+ 
+           </div>
+@@ -575,6 +575,8 @@
+         document.getElementById('acl_filename').value = localStorage.getItem('uploaded_filename');
+         ShowNotify(2, 'ACL Успешно загружен');
+         localStorage.removeItem('showNotification');
++        localStorage.removeItem('uploaded_filename');
++        document.getElementById('save-form-btn').click();
+    }
+ 
+     $('#gitlab_proj_upload_dropdown').on('change', function() {
+@@ -602,4 +604,13 @@
+         });
+     });
+ </script>
++<script>
++    if(localStorage.getItem('uploaded_filename_docx') !== null){
++        if(document.getElementById('acl_filename').value == ""){
++            document.getElementById('acl_filename').value = localStorage.getItem('uploaded_filename_docx');
++            localStorage.removeItem('uploaded_filename_docx');
++            document.getElementById('save-form-btn').click();
++        }
++    }
++</script>
+ {% endblock %}
+
+
+==== File: accesslist/views.py ====
+@@ -771,7 +771,7 @@ def upload_acl_from_git(request):
+             g = GitWorker(request, gitlab_repo_url, request.session['GIT_USERNAME'],
+                           request.session['GIT_PASSWORD'], None, '')
+             if g:
+-                g.repo.git.ls_remote('--heads', '--tags', f'https://{request.session["GIT_USERNAME"]}%40alfastrah.ru:{request.session["GIT_PASSWORD"]}@gitlab.alfastrah.ru/acl/infrastructure/mattermost.git')
++                g.repo.git.ls_remote('--heads', '--tags', f'https://{request.session["GIT_USERNAME"]}%40alfastrah.ru:{request.session["GIT_PASSWORD"]}@gitlab.alfastrah.ru/acl/{gitlab_project}/mattermost.git')
+                 g.free()
+         except IndexError as e:
+             logger.error(f'IndexError: {e}')
+
+
+==== File: static/js/main.js ====
+@@ -412,6 +412,11 @@ $(document).ready(function(){
+                  contentType: false,
+                  processData: false,
+                  beforeSend:function(){
++                     if(document.getElementById('acl_filename').value != ""){
++                        git_filename = document.getElementById('acl_filename').value;
++                        localStorage.setItem('uploaded_filename_docx', git_filename);
++                     }
++
+                      $(".input--file--label, form svg").hide();
+                      if ($(form > "spinner-border").length == 0)
+                         $(form).append("<div class='spinner-border text-danger' role='status'><span class='sr-only'>Loading...</span></div>");
+
+

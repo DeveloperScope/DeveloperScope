@@ -1,0 +1,85 @@
+==== File: accesslist/templates/acl_create_info.html ====
+@@ -64,9 +64,11 @@
+ 
+                     {%  if 'new' not in request.path %}
+                     <div class="justify-content-end d-inline-flex">
+-                        {% if status != 'JOB' and status != 'CMP' %}
++                        {% if status != 'JOB' and status != 'CMP' and status != 'WTE' %}
+                          <a class="btn btn-success m-1" href="{% url 'acloverview_urls' %}{{acl_id}}" style="max-height: 38px">Выполнить ACL</a>
+                          <button class="btn btn-danger btn-remove m-1" style="max-height: 38px">Удалить</button>
++                        {% elif status == 'WTE' %}
++                            <a class="btn btn-success m-1" href="{% url 'acloverview_urls' %}{{acl_id}}" style="max-height: 38px">Перейти к согласованию</a>
+                         {% endif %}
+                     </div>
+                         {% else %}
+@@ -248,7 +250,7 @@
+                    </div>
+                     <div class="col align-self-end">
+                     </div>
+-                    {%  if 'new' not in request.path and status != 'JOB' %}
++                    {%  if 'new' not in request.path and status != 'JOB' and status != 'WTE' %}
+                     <div class="justify-content-end">
+                          <button class="btn btn-danger btn-remove m-1" style="max-height: 38px">Удалить</button>
+                     </div>
+
+
+==== File: accesslist/views.py ====
+@@ -672,6 +672,14 @@ class AclOver(BaseView, LoginRequiredMixin, View):
+ @csrf_exempt
+ def AclStageChange(request,  *args, **kwargs):
+     if request.method == 'POST':
++        logger.info(f'Проверка request.user:{request.user}')
++        logger.info(f'Проверка request.session:{request.session}')
++        if request.user.is_anonymous:
++            logger.error(f'Пользователь авторизован как Anonymous')
++            messages.error(request, 'Вы не можете изменить статус ACL, вероятно Ваша сессия истекла. Пожалуйста, залогиньтесь в систему снова.')
++            result = {'error': 'Вы не можете изменить статус ACL, вероятно Ваша сессия истекла. Пожалуйста, залогиньтесь в систему снова.'}
++            send_to_mattermost('[СОГЛАСОВАНИЕ] Обнаружен Anonymous. Статус застрял на согласовано.')
++            return HttpResponse(json.dumps(result), content_type="application/json")
+         result = {'status': 'Статус изменен'}
+ 
+         uuid = request.POST.get('uuid', '')
+@@ -679,8 +687,6 @@ def AclStageChange(request,  *args, **kwargs):
+         stage = request.POST.get('stage', '')
+         sendtext = 'Статус Вашего запроса ACL изменён'
+ 
+-
+-
+         if stage not in ['NOTFL', 'FL', 'CMP', 'WTE', 'APRV', 'CNL', 'JOB']:
+             result = {'error': 'Ошибка данных'}
+         else:
+@@ -694,6 +700,7 @@ def AclStageChange(request,  *args, **kwargs):
+                             acl = ACL.objects.get(id=uuid)
+ 
+                             if stage in ['APRV', 'CNL'] and request.user not in [*acl.approve.all(), acl.owner] and 'token' not in request.META.get('HTTP_REFERER'):
++                                   logger.error(f'request:{request}. -- Вы не можете изменить статус ACL, вероятно не хватает прав')
+                                    messages.error(request, 'Вы не можете изменить статус ACL, вероятно не хватает прав')
+                                    result = {'error': 'Вы не можете изменить статус ACL, вероятно не хватает прав'}
+                                    return HttpResponse(json.dumps(result), content_type="application/json")
+@@ -1017,6 +1024,7 @@ def task(request, acl_id)->bool:
+     logger.info(f'[Отправка в omni] Начинается выполнение task для (request,acl_id):({request},{acl_id})')
+     if 'LOCAL_STORAGE' not in request.session or not is_valid_uuid(acl_id):
+         result = {'error': 'Произошла ошибка, вероятно отсутствуют данные для выполнения.'}
++        logger.info(f'LOCAL_STORAGE отсутствует в request.session:{request.session}')
+         return HttpResponse(json.dumps(result, ensure_ascii=False), content_type="application/json")
+ 
+     JOB = cache.get(acl_id, {})
+@@ -1064,13 +1072,16 @@ def task(request, acl_id)->bool:
+         logger.info(f'[Отправка в omni] Сформирован word документ: {doc_result}')
+         doc_ready = True
+     except Exception as e:
++        logger.error(f'Произошла ошибка при создании docx файла: {e}')
+         UpdateCallBackStatus(request, acl_id, 'docx_download_status',
+                              'Произошла ошибка при создании docx файла: {}'.format(e), 0)
+         is_work_done = False
+     finally:
++        logger.info(f'Выполнение finally в task. doc_ready:{doc_ready}')
+         if doc_ready:
+             if 'ACT_MAKE_DOCX' in request.session:
+                 del request.session['ACT_MAKE_DOCX']
++                logger.info(f'Файл docx успешно сформирован. ACT_MAKE_DOCX удалён из сессии. Текущее содержимое сессии:{request.session}')
+                 UpdateCallBackStatus(request, acl_id, 'docx_download_status', "Файл docx успешно сформирован", 2)
+     if 'ACT_OMNI' in request.session:
+         logger.error('ПРЕВЕД МЕДВЕД')
+
+

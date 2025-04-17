@@ -1,0 +1,193 @@
+==== File: ownerlist/utils.py ====
+@@ -1198,81 +1198,82 @@ def table(records, fields, headings=None, alignment=None, file=None):
+ 
+ def MakeMarkDown(request, json_data, filename, fileuuid=''):
+     """Функция записывает JSON как md файл"""
+-    #request.session['git_upload_status'] = 'Создание md-файла'
+-    print(f'Создание md')
+-    UpdateCallBackStatus(request, fileuuid, 'git_upload_status', 'Создание md-файла')
++    print("[MakeMarkDown] Создание md")
++    UpdateCallBackStatus(request, fileuuid, 'git_upload_status', 'Создание md файла')
++
+     try:
+-        tmp = os.path.join(BASE_DIR, 'static/md/' + filename + '.md')
+-        file = codecs.open(tmp, "w", encoding="utf-8")
+-        data = json_data #json.loads(json_data)
+-        for key in data:
+-            if key == 'acl_create_info.html':
+-                logger.debug(f'[MakeMarkDown] acl_create_info')
+-                print(f'[MakeMarkDown] acl_create_info')
+-                file.write('## {}'.format(data[key][4]))
+-                file.write('\n')
+-                file.write('##### Описание доступа к ресурсам')
+-                file.write('\n')
+-                tmp = zip(contact_table, data[key])
+-                fields = [0, 1]
+-                table(records=tmp, fields=fields, headings=contact_column, alignment=[('<', '<'), ('<', '<')], file=file)
+-
+-            elif key == 'acl_internal_resources.html':
+-                logger.debug(f'[MakeMarkDown] acl_internal_resources')
+-                print(f'[MakeMarkDown] acl_internal_resources')
+-                file.write('\n')
+-                file.write('##### Список внутренних ресурсов (СГ АльфаСтрахование)')
+-                file.write('\n')
+-                fields = [0, 1, 2]
+-                table(records=data[key], fields=fields, headings=standart_column,
+-                      alignment=[('<', '<'), ('^', '^'), ('<', '<')], file=file)
+-
+-            elif key == 'acl_dmz_resources.html':
+-                logger.debug(f'[MakeMarkDown] acl_dmz_resources')
+-                print(f'[MakeMarkDown] acl_dmz_resources')
+-                file.write('\n')
+-                file.write('##### Список DMZ ресурсов (СГ АльфаСтрахование)')
+-                file.write('\n')
+-                fields = [0, 1, 2]
+-                table(records=data[key], fields=fields, headings=standart_column,
+-                      alignment=[('<', '<'), ('^', '^'), ('<', '<')], file=file)
+-
+-            elif key == 'acl_external_resources.html':
+-                logger.debug(f'[MakeMarkDown] acl_external_resources')
+-                print(f'[MakeMarkDown] acl_external_resources')
+-                file.write('\n')
+-                file.write('##### Список внешних ресурсов (Internet)')
+-                file.write('\n')
+-                fields = [0, 1, 2, 3]
+-                table(records=data[key], fields=fields, headings=external_column,
+-                      alignment=[('<', '<'), ('<', '<'), ('^', '^'), ('<', '<')], file=file)
+-
+-            elif key == 'acl_traffic.html':
+-                logger.debug(f'[MakeMarkDown] acl_traffic')
+-                print(f'[MakeMarkDown] acl_traffic')
+-                file.write('\n')
+-                file.write('##### Потоки трафика')
+-                file.write('\n')
+-                fields = [0, 1, 2, 3, 4, 5, 6, 7]
+-                for item_index in range(len(data[key])):
+-                    if len(data[key][item_index]) < len(fields):
+-                        data[key][item_index].append('.')
+-                table(records=data[key], fields=fields, headings=traffic_column,
+-                      alignment=[('<', '<'), ('<', '<'), ('<', '<'), ('<', '<'), ('<', '<'), ('<', '<'), ('<', '<'), ('<', '<'), ],
+-                      file=file)
+-        if file:
+-            file.close()
++        file_path = os.path.join(BASE_DIR, f"static/md/{filename}.md")
++        with codecs.open(file_path, "w", encoding="utf-8") as file:
++            func_map = {
++                'acl_create_info.html': md_write_acl_create_info,
++                'acl_internal_resources.html': md_write_acl_internal_resources,
++                'acl_dmz_resources.html': md_write_acl_dmz_resources,
++                'acl_external_resources.html': md_write_acl_external_resources,
++                'acl_traffic.html': md_write_acl_traffic
++            }
++            for key, data in json_data.items():
++                if key in func_map:
++                    func_map[key](file, data)
++
+     except Exception as e:
+-        print(f'ОШИБКА ПРИ СОЗДАНИИ MD:{e}')
+-        logger.error('{}'.format(e))
++        md_handle_error(filename, fileuuid, e)
+         return False
+-    UpdateCallBackStatus(request, fileuuid, 'git_upload_status', 'ACL файл cоздан')
+-    #request.session['git_upload_status'] = '/static/md/' + filename + '.md'
+-    #request.session.modified = True
+-    return '/static/md/' + filename + '.md'
+ 
++    UpdateCallBackStatus(request, fileuuid, 'git_upload_status', 'ACL file created')
++    return f"/static/md/{filename}.md"
++
++
++def md_write_acl_create_info(file, data):
++    logger.debug("[MakeMarkDown] acl_create_info")
++    print("[MakeMarkDown] acl_create_info")
++    file.write("## {}\n".format(data[4]))
++    file.write("##### Описание доступа к ресурсам\n")
++    tmp = zip(contact_table, data)
++    fields = [0, 1]
++    table(records=tmp, fields=fields, headings=contact_column, alignment=[('<', '<'), ('<', '<')], file=file)
++
++
++def md_write_acl_internal_resources(file, data):
++    logger.debug("[MakeMarkDown] acl_internal_resources")
++    print("[MakeMarkDown] acl_internal_resources")
++    file.write("\n##### Список внутренних ресурсов (СГ АльфаСтрахование)\n")
++    fields = [0, 1, 2]
++    table(records=data, fields=fields, headings=standart_column, alignment=[('<', '<'), ('^', '^'), ('<', '<')], file=file)
++
++
++def md_write_acl_dmz_resources(file, data):
++    logger.debug("[MakeMarkDown] acl_dmz_resources")
++    print("[MakeMarkDown] acl_dmz_resources")
++    file.write("\n##### Список DMZ ресурсов (СГ АльфаСтрахование)\n")
++    fields = [0, 1, 2]
++    table(records=data, fields=fields, headings=standart_column, alignment=[('<', '<'), ('^', '^'), ('<', '<')], file=file)
++
++
++def md_write_acl_external_resources(file, data):
++    logger.debug("[MakeMarkDown] acl_external_resources")
++    print("[MakeMarkDown] acl_external_resources")
++    file.write("\n##### Список внешних ресурсов (Internet)\n")
++    fields = [0, 1, 2, 3]
++    table(records=data, fields=fields, headings=external_column, alignment=[('<', '<'), ('<', '<'), ('^', '^'), ('<', '<')], file=file)
++
++
++def md_write_acl_traffic(file, data):
++    logger.debug("[MakeMarkDown] acl_traffic")
++    print("[MakeMarkDown] acl_traffic")
++    file.write("\n##### Потоки трафика\n")
++    fields = [0, 1, 2, 3, 4, 5, 6, 7]
++    if data:
++        for item in data:
++            if len(item) < len(fields):
++                item.extend([' '] * (len(fields) - len(item)))
++        table(records=data, fields=fields, headings=traffic_column, alignment=[('<', '<'), ('<', '<'), ('<', '<'), ('<', '<'), ('<', '<'), ('<', '<'), ('<', '<'), ('<', '<')], file=file)
+ 
+ 
++def md_handle_error(filename, fileuuid, e):
++    print(f"[ACL PORTAL] Error creating MD: {e} | filename: {filename} | fileuuid: {fileuuid}")
++    send_to_mattermost(f"[ACL PORTAL] Error creating MD: {e} | filename: {filename} | fileuuid: {fileuuid}")
++    logger.error(f"[ACL PORTAL] Error creating MD: {e} | filename: {filename} | fileuuid: {fileuuid}")
++
+ class GitWorker:
+     def __init__(self, request, GITPRO=None, USERNAME=None, PASSWORD=None,  PATH_OF_GIT_REPO=None, MDFILE='', taskid=''):
+         os.environ['GIT_TIMEOUT'] = '60'
+@@ -1800,24 +1801,19 @@ def send_onmitracker(sender, title, text, attach, proxy=None, fake=None, request
+     except Exception as e:
+         logger.warning(f"[SEND_TO_MATTERMOST EXCEPTION] {e}")
+     bodyNotEncoded = """<?xml version="1.0" encoding="utf-8"?>
+-            <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:s="http://www.w3.org/2001/XMLSchema" xmlns:tns="http://www.omninet.de/OtWebSvc/v1">
+-    <soap:Body>
+-        <tns:InvokeScript>
+-           <tns:Script name="OmniAPI" runAt="Server">
+-                <tns:Parameters>
+-                    <tns:StringVal name='strFunction'>CreateIncidentFromTemplateWithAttachmentAndExternalNumber</tns:StringVal>
+-                    <tns:StringVal name='strEMail'>{}</tns:StringVal>
+-                    <tns:StringVal name='strTitle'>{}</tns:StringVal>
+-                    <tns:StringVal name='strDescription'>{}</tns:StringVal>
+-                    <tns:StringVal name='strTemplateCode'>SH0458</tns:StringVal>
+-                    <tns:StringVal name='strExternalNumber'>{}</tns:StringVal>
+-                    <tns:StringVal name='strAttachmentPath'>{}</tns:StringVal>
+-                </tns:Parameters>
+-            </tns:Script>
+-        </tns:InvokeScript>
+-    </soap:Body>
+-    </soap:Envelope>
+-    """.format(sender, title, text, str(uid), attach)
++<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:s="http://www.w3.org/2001/XMLSchema" xmlns:tns="http://www.omninet.de/OtWebSvc/v1">
++<soap:Body>
++   <tns:InvokeScript>
++     <tns:Script name="OmniAPI" runAt="Server">
++       <tns:Parameters>
++         <tns:StringVal name="strFunction">TestAPI</tns:StringVal>
++         <tns:StringVal name="strTestText">123456</tns:StringVal>
++       </tns:Parameters>
++     </tns:Script>
++   </tns:InvokeScript>
++</soap:Body>
++</soap:Envelope>
++"""
+ 
+     body = bodyNotEncoded.encode('utf-8')
+     logger.debug('BODY NOT ENCODED:'+str(bodyNotEncoded))
+
+

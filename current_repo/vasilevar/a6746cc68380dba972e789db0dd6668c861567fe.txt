@@ -1,0 +1,28 @@
+==== File: .gitlab-ci.yml ====
+@@ -35,6 +35,11 @@ lint_code:
+     - tar -czf $backup_archive.tar.gz $SITE_ROOT
+     - ls -las $CI_PROJECT_DIR
+     - cp -r $CI_PROJECT_DIR/* $SITE_ROOT
++    - if grep -q '^COMMIT_TAG=' $SITE_ROOT/.env; then
++        sudo sed -i "s/^COMMIT_TAG=.*/COMMIT_TAG=$CI_COMMIT_TAG/" $SITE_ROOT/.env;
++      else
++        echo "COMMIT_TAG=$CI_COMMIT_TAG" | sudo tee -a $SITE_ROOT/.env;
++      fi
+     - sudo python -m pip config set global.index https://nx.alfastrah.ru/repository/pypi-proxy/pypi
+     - sudo python -m pip config set global.index-url https://nx.alfastrah.ru/repository/pypi-proxy/simple
+     - sudo python -m pip config set global.trusted-host nx.alfastrah.ru
+
+
+==== File: templates/base.html ====
+@@ -58,6 +58,9 @@
+ 
+       </div>
+    </div>
++   <div class="col-2 d-flex justify-content-end align-items-center">
++    <h6 class="mb-0 text-white ml-auto">version: {{ commit_tag }}</h6>
++  </div>
+     <script type="text/javascript">
+     $("form[name='search-text']").on("submit", function(e){
+             $(".search-spinner").hide();
+
+

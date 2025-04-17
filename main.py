@@ -7,7 +7,8 @@ TARGET_REPO = "devQ_testData_PythonProject"
 # put the target repo next to the current folder
 
 # Get the path to the current project (assumes script is run from the project directory)
-current_repo_path = Path(__file__).resolve().parent
+current_repo_path = Path().resolve()
+print(current_repo_path)
 
 # Go up one level, then into the sibling directory
 repo_path = current_repo_path.parent / TARGET_REPO
@@ -21,7 +22,7 @@ for commit in repo.traverse_commits():
     if not commit.msg.startswith('Merge'):
         continue
 
-    print(commit.msg.__repr__())
+    # print(commit.msg.__repr__())
     author_username = commit.author.email.split('@')[0].lower()
 
     author_mapping[author_username].add((commit.author.email, commit.author.name))

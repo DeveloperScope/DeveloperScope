@@ -1,0 +1,63 @@
+==== File: acladmin/tasks.py ====
+@@ -1,9 +1,11 @@
+ import json
+ import os
++import time
+ 
+ from celery import shared_task
+ from django.apps import apps
+ 
++
+ from acladmin import settings
+ from ownerlist.utils import make_doc, celery_send_omnitracker, GitWorker, \
+     create_markdown_file, check_acl_in_omni, send_to_mattermost
+@@ -11,6 +13,7 @@ from ownerlist.utils import make_doc, celery_send_omnitracker, GitWorker, \
+ 
+ @shared_task
+ def send_acl(acl_id, gitlab_repo_url):
++    send_to_mattermost(f"[acl_portal][Celery send_acl] Cтарт задачи.")
+     # 1 Создаём docx файл
+     ACL = apps.get_model('accesslist', "ACL")
+     acl_object = ACL.objects.get(id=acl_id)
+@@ -29,7 +32,7 @@ def send_acl(acl_id, gitlab_repo_url):
+         return False
+ 
+     docx_url = f"https://acl.vesta.ru/{doc_result[1:]}"
+-
++    send_to_mattermost(f"[acl_portal][Celery send_acl] Старт отправки ACL({acl_object.id}) в omnitracker.")
+     # 2 Отправляем docx файл в omnitracker
+     task_id = celery_send_omnitracker(sender=acl_object.owner.email,
+                                       title=f'SH0458 Запрос на предоставление доступа согласован: {str(acl_object.approve.first().get_full_name())}',
+@@ -37,7 +40,7 @@ def send_acl(acl_id, gitlab_repo_url):
+                                       attach=docx_url,
+                                       uuid=acl_object.id
+                                       )
+-
++    send_to_mattermost(f"[acl_portal][Celery send_acl] ACL({acl_object.id}) отправлен в omnitracker. Получен task_id:({task_id})")
+     if task_id is None:
+         print(f"[acl_portal][Celery send_acl] Ошибка: Заявку({acl_object.id}) Не удалось отправить в omnitracker.")
+         send_to_mattermost(f"[acl_portal][Celery send_acl] Ошибка: Заявку({acl_object.id}) Не удалось отправить в omnitracker.")
+@@ -84,16 +87,21 @@ def send_acl(acl_id, gitlab_repo_url):
+         else:
+             print(f"[acl_portal][Celery send_acl] Ошибка: Сформированный md файл не существует. Путь:{file_md_abs}")
+             send_to_mattermost(f"[acl_portal][Celery send_acl] Ошибка: Сформированный md файл не существует. Путь:{file_md_abs}")
++    send_to_mattermost(f"[acl_portal][Celery send_acl] Задача успешно отработала")
+     return task_id
+ 
+ 
+ @shared_task
+ def check_acl_status():
++    send_to_mattermost(f"[acl_portal][Celery check_acl_status] Cтарт задачи.")
+     ACL = apps.get_model("accesslist", "ACL")
+     acl_objects = ACL.objects.filter(status="JOB")
++    send_to_mattermost(f"[acl_portal][Celery check_acl_status] Cтарт проверки статуса заявок. Всего на проверке: {len(acl_objects)}.")
+     for acl_object in acl_objects:
+         try:
+             check_acl_in_omni(acl_object)
++            time.sleep(3)
+         except Exception as e:
+             print(f"[acl_portal][Celery check_acl_status] Ошибка проверки статуса acl({acl_object.id}). Ошибка:{e}")
+             send_to_mattermost(f"[acl_portal][Celery check_acl_status] Ошибка проверки статуса acl({acl_object.id}). Ошибка:{e}")
++    send_to_mattermost(f"[acl_portal][Celery check_acl_status] Задача успешно отработала.")
+
+

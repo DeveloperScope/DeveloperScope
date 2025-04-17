@@ -1,0 +1,143 @@
+==== File: accesslist/templates/acl_external_resources.html ====
+@@ -63,7 +63,7 @@
+                              <span class="validity"></span>
+                          </td>
+                         <td class="">
+-                            <input type="text" value="{{item.1}} " class="form-control" placeholder="myserver.example.com" title="myserver.example.com" name="input_fqnd_{% random_int 0 100 %}">
++                            <input type="text" value="{{item.1}}" class="form-control" placeholder="myserver.example.com" title="myserver.example.com" name="input_fqnd_{% random_int 0 100 %}">
+                             <span class="validity"></span>
+                         </td>
+                          <td class="">
+
+
+==== File: accesslist/templates/acl_traffic.html ====
+@@ -41,10 +41,10 @@
+                      <tr>
+                                 {% for widget in widgets %}
+                                     <td>
+-                                        {% if widget == "input__ip_source" or "input__ip__external" %}
+-                                            <input type="text" class="form-control" value="{{item|get_index:forloop.counter0}}" name="{{widget}}_{% random_int %}" title="enter ip" autofocus required>
++                                        {% if "input__ip" in widget%}
++                                            <input type="text" class="form-control" value="{{item|get_index:forloop.counter0}}" name="{{widget}}_{% random_int %}" title="1.1.1.1" autofocus required>
+                                         {% else %}
+-                                            <textarea type="text" class="form-control" rows="1" cols="19" name="{{widget}}_{% random_int %}" {% if widget == "input__application_port" %}title="grpc, kafka, sqlServer" maxlength="50" {% endif %} autofocus required>{% if widget == "input__application_port" %} {% endif %}{{item|get_index:forloop.counter0}}</textarea>
++                                            <textarea type="text" class="form-control" rows="1" cols="19" name="{{widget}}_{% random_int %}" {% if widget == "input__application_port" %}title="grpc, kafka, sqlServer" maxlength="50" {% endif %} {% if widget == "input__host_port" %} title="ping/0" {% endif %} autofocus required>{% if widget == "input__application_port" %} {% endif %}{{item|get_index:forloop.counter0}}</textarea>
+                                         {% endif %}
+                                         <span class="validity"></span>
+                                     </td>
+@@ -62,7 +62,7 @@
+                                      {% if widget == "input__ip_source" or widget == "input__ip__external" or widget == "input__host_port" %}
+                                             <input type="text" class="form-control" value="{{item|get_index:forloop.counter0}}" name="{{widget}}_{% random_int %}" {% if widget == "input__ip_source" or widget == "input__ip__external" %} pattern="^((\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.){3}(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])$" {% endif %} {% if widget == "input__host_port" %}pattern="^[a-zA-Z]+/+\d+$" title="port/0"{% endif %} autofocus required>
+                                      {% else %}
+-                                            <textarea type="text" class="form-control" rows="1" cols="19" name="{{widget}}_{% random_int %}" {% if widget == "input__application_port" %}title="grpc, kafka, sqlServer" maxlength="50" {% endif %} autofocus required>{% if widget == "input__application_port" %} {% endif %}{{item|get_index:forloop.counter0}}</textarea>
++                                            <textarea type="text" class="form-control" rows="1" cols="19" name="{{widget}}_{% random_int %}" {% if widget == "input__application_port" %}title="grpc, kafka, sqlServer" maxlength="50" {% endif %} autofocus required>{{item|get_index:forloop.counter0}}</textarea>
+                                      {% endif %}
+                                      <span class="validity"></span>
+                                  </td>
+
+
+==== File: acladmin/settings.py ====
+@@ -248,7 +248,7 @@ EMAIL_HOST_PASSWORD = os.environ['EMAIL_HOST_PASSWORD']
+ MATTERMOST_WEBHOOK_URL = 'https://mattermost.alfastrah.ru/hooks/naht8rbp4fdwpf43pbsyatanka'
+ 
+ OMNITRACKER_URL = "http://ot10.vesta.ru/otws/v1.asmx"
+-TIMEOUT = 5
++TIMEOUT = 120
+ ATTEMPS = 3
+ JS_TIMEOUT = 3000 #msec
+ 
+
+
+==== File: ownerlist/utils.py ====
+@@ -259,7 +259,7 @@ def upload_file_handler(request, functionhandler = None):
+         result['error'] = "Отсутствуют файлы для загрузки"
+         return result
+     if uploaded_file_url == '':
+-       return {'error': 'There is error upload file'}
++        return {'error': 'There is error upload file'}
+ 
+ 
+     if functionhandler is not None:
+@@ -282,7 +282,7 @@ def upload_file_handler(request, functionhandler = None):
+             uploaded_file_url = None
+     if isinstance(result, int):
+        if result > 0:
+-            return {'ok': 'Добавлено новых значений: {}'.format(result)}
++           return {'ok': 'Добавлено новых значений: {}'.format(result)}
+     else:
+         if isinstance(result, dict):
+             if 'LOCAL_STORAGE' in result:
+@@ -940,7 +940,7 @@ def make_doc(request=None, data_set={}, fileuuid='')->str:
+                 continue
+             for key, value in enumerate(data_set[data], start=1):
+                 if row_cnt >= table_rows:
+-                        table_tmp.add_row()
++                    table_tmp.add_row()
+                 if len(value) <= table_cols:
+                     for cell_idx, cell_val in enumerate(value):
+                         table_tmp.cell(key, cell_idx).text = str(cell_val)
+@@ -1081,7 +1081,7 @@ def MakeMarkDown(request, json_data, filename, fileuuid=''):
+                 file.write('\n')
+                 file.write('##### Список внутренних ресурсов (СГ АльфаСтрахование)')
+                 file.write('\n')
+-                fields = [0, 1, 2]
++                fields = [0, 1, 2, 3]
+                 table(records=data[key], fields=fields, headings=standart_column,
+                       alignment=[('<', '<'), ('^', '^'), ('<', '<')], file=file)
+ 
+@@ -1090,7 +1090,7 @@ def MakeMarkDown(request, json_data, filename, fileuuid=''):
+                 file.write('\n')
+                 file.write('##### Список DMZ ресурсов (СГ АльфаСтрахование)')
+                 file.write('\n')
+-                fields = [0, 1, 2]
++                fields = [0, 1, 2, 3]
+                 table(records=data[key], fields=fields, headings=standart_column,
+                       alignment=[('<', '<'), ('^', '^'), ('<', '<')], file=file)
+ 
+@@ -1098,17 +1098,17 @@ def MakeMarkDown(request, json_data, filename, fileuuid=''):
+                 file.write('\n')
+                 file.write('##### Список внешних ресурсов (Internet)')
+                 file.write('\n')
+-                fields = [0, 1, 2]
++                fields = [0, 1, 2, 3]
+                 table(records=data[key], fields=fields, headings=standart_column,
+-                      alignment=[('<', '<'), ('^', '^'), ('<', '<')], file=file)
++                      alignment=[('<', '<'), ('<', '<'), ('^', '^'), ('<', '<')], file=file)
+ 
+             elif key == 'acl_traffic.html':
+                 file.write('\n')
+                 file.write('##### Потоки трафика')
+                 file.write('\n')
+-                fields = [0, 1, 2, 3, 4, 5]
++                fields = [0, 1, 2, 3, 4, 5, 6]
+                 table(records=data[key], fields=fields, headings=traffic_column,
+-                      alignment=[('<', '<'), ('<', '<'), ('<', '<'), ('<', '<'), ('<', '<'), ('<', '<'), ], file=file)
++                      alignment=[('<', '<'), ('<', '<'), ('<', '<'), ('<', '<'), ('<', '<'), ('<', '<'), ('<', '<'), ], file=file)
+         if file:
+             file.close()
+     except Exception as e:
+
+
+==== File: static/js/main.js ====
+@@ -509,14 +509,17 @@ $(document).ready(function(){
+ 
+ 
+     $(".table-ip-internal").delegate('.btn-action-add','click', function() {
+-
+     let tr    = $(this).closest('tr')[0];
+     let new_name = $('.table-ip-internal tr:first-child').find('.form-control');
+     let idx_input = 0;
+     $(tr).clone().insertAfter(tr).find('.form-control').each(function() {
+         try
+         {   console.log(new_name[idx_input].name);
+-            $(this).val('').attr('placeholder', '').attr('name',  new_name[idx_input].name+'_'+el_id.toString());
++
++                $(this).attr('placeholder', '').attr('name',  new_name[idx_input].name+'_'+el_id.toString());
++                if(new_name[idx_input].name.includes("input_descr")){
++                    $(this).val("").attr('placeholder', "").attr('name',  new_name[idx_input].name+'_'+el_id.toString());
++                }
+             idx_input++;
+             el_id++;
+         }catch (e){
+
+

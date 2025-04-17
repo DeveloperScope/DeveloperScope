@@ -1,0 +1,383 @@
+==== File: accesslist/templates/acl_dmz_resources.html ====
+@@ -5,7 +5,47 @@
+ <div class="col-8 pt-3">
+         <div class="main-block">
+              <h4 class="main-title text-center mb-1">2. Описание доступа к ресурсам <span class="badge badge-danger">Нужно заполнить</span></h4>
+-             <p class="main-description">2.2 Список DMZ ресурсов (СГ АльфаСтрахование)</p>
++             {% if latest_local_storage %}
++                    <button id="arrow-down" class="btn text-dark arrow-down" data-toggle-state="false">Просмотр предыдущей заявки</button>
++                    <div id="prev-info-container" class="border" style="display:none;">
++                        <div class="col-12 mt-1">
++                            <div>
++                                <p class="text-dark font-weight-bold">uuid: <u class="text-info">{{ latest_uuid }}</u></p>
++                                <p class="text-dark font-weight-bold">project: <u class="text-info">{{ latest_project }}</u></p>
++                                <p class="text-dark font-weight-bold">filename: <u class="text-info">{{ latest_git_file }}</u></p>
++                                <hr>
++                            </div>
++                            <div>
++                                <p class="text-success font-weight-bold"><u>Список DMZ ресурсов (СГ АльфаСтрахование)</u></p>
++                            </div>
++                            {% for key in latest_local_storage.items %}
++                               {% if key.0 == 'acl_dmz_resources.html' %}
++                                    <div>
++                                         <table class="border-0 traffic-table table-hover">
++                                             <thead class="text-secondary border-bottom small">
++                                                 <th>IP-адрес источника</th>
++                                                 <th>Префикс-сети</th>
++                                                 <th>Описание (цель)</th>
++                                             </thead>
++                                             <tbody>
++                                             {% for el in key.1 %}
++                                                 <tr>
++                                                     <td>{{ el.0 }}</td>
++                                                     <td>{{ el.1 }}</td>
++                                                     <td>{{ el.2 }}</td>
++                                                 </tr>
++                                             {% endfor %}
++                                             </tbody>
++                                         </table>
++                                    </div>
++                               {% endif %}
++                           {% endfor %}
++                        </div>
++                    </div>
++            {% else %}
++               <p class="text-danger">Заявки по проекту с выбранным файлом не найдены.</p>
++            {% endif %}
++            <p class="main-description">2.2 Список DMZ ресурсов (СГ АльфаСтрахование)</p>
+         </div>
+  {% if '/new/' in request.path %}
+     <form method="post" class="form-inline" action="{% url 'acldmz_urls' acl_id=acl_id %}" name="acl-form-contacts">
+@@ -121,4 +161,20 @@
+     $(".post-sidebar").removeClass("d-none");
+ </script>
+ </div>
++
++<script>
++    {# Просмотр предыдущей заявки #}
++      $(document).ready(function() {
++        $('#arrow-down').on('click', function() {
++          var toggleState = $(this).data('toggle-state');
++          if (toggleState) {
++            $('#prev-info-container').slideUp();
++            $(this).data('toggle-state', false);
++          } else {
++            $('#prev-info-container').slideDown();
++            $(this).data('toggle-state', true);
++          }
++        });
++      });
++</script>
+ {% endblock %}
+
+
+==== File: accesslist/templates/acl_external_resources.html ====
+@@ -5,7 +5,49 @@
+ <div class="col-8 pt-3">
+         <div class="main-block">
+              <h4 class="main-title text-center mb-1">2. Описание доступа к ресурсам <span class="badge badge-danger">Нужно заполнить</span></h4>
+-             <p class="main-description">2.3 Список внешних ресурсов (Internet)</p>
++            {% if latest_local_storage %}
++                    <button id="arrow-down" class="btn text-dark arrow-down" data-toggle-state="false">Просмотр предыдущей заявки</button>
++                    <div id="prev-info-container" class="border" style="display:none;">
++                        <div class="col-12 mt-1">
++                           <div>
++                                <p class="text-dark font-weight-bold">uuid: <u class="text-info">{{ latest_uuid }}</u></p>
++                                <p class="text-dark font-weight-bold">project: <u class="text-info">{{ latest_project }}</u></p>
++                                <p class="text-dark font-weight-bold">filename: <u class="text-info">{{ latest_git_file }}</u></p>
++                                <hr>
++                            </div>
++                            <div>
++                                <p class="text-success font-weight-bold"><u>Список внешних ресурсов (Internet)</u></p>
++                            </div>
++                            {% for key in latest_local_storage.items %}
++                               {% if key.0 == 'acl_external_resources.html' %}
++                                    <div>
++                                         <table class="border-0 traffic-table table-hover">
++                                             <thead class="text-secondary border-bottom small">
++                                                 <th>IP-адрес источника</th>
++                                                 <th>FQDN</th>
++                                                 <th>Префикс-сети</th>
++                                                 <th>Описание (цель)</th>
++                                             </thead>
++                                             <tbody>
++                                             {% for el in key.1 %}
++                                                 <tr>
++                                                     <td>{{ el.0 }}</td>
++                                                     <td>{{ el.1 }}</td>
++                                                     <td>{{ el.2 }}</td>
++                                                     <td>{{ el.3 }}</td>
++                                                 </tr>
++                                             {% endfor %}
++                                             </tbody>
++                                         </table>
++                                    </div>
++                               {% endif %}
++                           {% endfor %}
++                        </div>
++                    </div>
++            {% else %}
++               <p class="text-danger">Заявки по проекту с выбранным файлом не найдены.</p>
++            {% endif %}
++            <p class="main-description">2.3 Список внешних ресурсов (Internet)</p>
+         </div>
+ {% if '/new/' in request.path %}
+ <form class="form-inline" method="post" action="{% url 'aclexternal_urls'  acl_id=acl_id %}" name="acl-form-internal">
+@@ -148,4 +190,20 @@ document.addEventListener('DOMContentLoaded', function() {
+ </script>
+ </div>
+ 
++<script>
++    {# Просмотр предыдущей заявки #}
++      $(document).ready(function() {
++        $('#arrow-down').on('click', function() {
++          var toggleState = $(this).data('toggle-state');
++          if (toggleState) {
++            $('#prev-info-container').slideUp();
++            $(this).data('toggle-state', false);
++          } else {
++            $('#prev-info-container').slideDown();
++            $(this).data('toggle-state', true);
++          }
++        });
++      });
++</script>
++
+ {% endblock %}
+
+
+==== File: accesslist/templates/acl_internal_resources.html ====
+@@ -5,7 +5,51 @@
+ <div class="col-8 pt-3">
+         <div class="main-block">
+              <h4 class="main-title text-center mb-1">2. Описание доступа к ресурсам <span class="badge badge-danger">Нужно заполнить</span></h4>
+-             <p class="main-description">2.1 Список внутренних ресурсов (СГ АльфаСтрахование)</p>
++            <div class="main-title-block d-inline-flex w-100 mb-3">
++               <div class="justify-content-start">
++                   {% if latest_local_storage %}
++                        <button id="arrow-down" class="btn text-dark arrow-down" data-toggle-state="false">Просмотр предыдущей заявки</button>
++                        <div id="prev-info-container" class="border" style="display:none;">
++                            <div class="col-12 mt-1">
++                                <div>
++                                    <p class="text-dark font-weight-bold">uuid: <u class="text-info">{{ latest_uuid }}</u></p>
++                                    <p class="text-dark font-weight-bold">project: <u class="text-info">{{ latest_project }}</u></p>
++                                    <p class="text-dark font-weight-bold">filename: <u class="text-info">{{ latest_git_file }}</u></p>
++                                    <hr>
++                                </div>
++                                <div>
++                                    <p class="text-success font-weight-bold"><u>Список внутренних ресурсов (СГ АльфаСтрахование)</u></p>
++                                </div>
++                                {% for key in latest_local_storage.items %}
++                                   {% if key.0 == 'acl_internal_resources.html' %}
++                                        <div>
++                                             <table class="border-0 traffic-table table-hover">
++                                                 <thead class="text-secondary border-bottom small">
++                                                     <th>IP-адрес источника</th>
++                                                     <th>Префикс-сети</th>
++                                                     <th>Описание (цель)</th>
++                                                 </thead>
++                                                 <tbody>
++                                                 {% for el in key.1 %}
++                                                     <tr>
++                                                         <td>{{ el.0 }}</td>
++                                                         <td>{{ el.1 }}</td>
++                                                         <td>{{ el.2 }}</td>
++                                                     </tr>
++                                                 {% endfor %}
++                                                 </tbody>
++                                             </table>
++                                        </div>
++                                   {% endif %}
++                               {% endfor %}
++                            </div>
++                        </div>
++                {% else %}
++                   <p class="text-danger">Заявки по проекту с выбранным файлом не найдены.</p>
++                {% endif %}
++               </div>
++           </div>
++            <p class="main-description">2.1 Список внутренних ресурсов (СГ АльфаСтрахование)</p>
+         </div>
+  {% if '/new/' in request.path %}
+ <form class="form-inline" method="post" action="{% url 'aclinternal_urls'  acl_id=acl_id %}" name="acl-form-internal">
+@@ -91,4 +135,21 @@
+ </script>
+     </form>
+ </div>
++
++<script>
++    {# Просмотр предыдущей заявки #}
++      $(document).ready(function() {
++        $('#arrow-down').on('click', function() {
++          var toggleState = $(this).data('toggle-state');
++          if (toggleState) {
++            $('#prev-info-container').slideUp();
++            $(this).data('toggle-state', false);
++          } else {
++            $('#prev-info-container').slideDown();
++            $(this).data('toggle-state', true);
++          }
++        });
++      });
++</script>
++
+ {% endblock %}
+
+
+==== File: accesslist/templates/acl_traffic.html ====
+@@ -5,8 +5,57 @@
+ {% block row %}
+ <div class="col-11 pt-3">
+         <div class="main-block">
+-             <h4 class="main-title text-center mb-1">2. Описание доступа к ресурсам <span class="badge badge-danger">Нужно заполнить</span></h4>
+-             <p class="main-description">2.4 Потоки трафика**</p>
++            <h4 class="main-title text-center mb-1">2. Описание доступа к ресурсам <span class="badge badge-danger">Нужно заполнить</span></h4>
++            {% if latest_local_storage %}
++                    <button id="arrow-down" class="btn text-dark arrow-down" data-toggle-state="false">Просмотр предыдущей заявки</button>
++                    <div id="prev-info-container" class="border" style="display:none;">
++                        <div class="col-12 mt-1">
++                            <div>
++                                <p class="text-dark font-weight-bold">uuid: <u class="text-info">{{ latest_uuid }}</u></p>
++                                <p class="text-dark font-weight-bold">project: <u class="text-info">{{ latest_project }}</u></p>
++                                <p class="text-dark font-weight-bold">filename: <u class="text-info">{{ latest_git_file }}</u></p>
++                                <hr>
++                            </div>
++                            <div>
++                                <p class="text-success font-weight-bold"><u>Потоки траффика</u></p>
++                            </div>
++                            {% for key in latest_local_storage.items %}
++                               {% if key.0 == 'acl_traffic.html' %}
++                                    <div>
++                                         <table class="border-0 traffic-table table-hover">
++                                             <thead class="text-secondary border-bottom small">
++                                                 <th>Имя хоста (Источник)</th>
++                                                 <th>IP-адрес (Источник траффика)</th>
++                                                 <th>Имя хоста (Назначение)</th>
++                                                 <th>IP-адрес (Назначение)</th>
++                                                 <th>Протокол/Порт (Назначение)</th>
++                                                 <th>ПО использующее нестандартный порт</th>
++                                                 <th>Описание (цель)</th>
++                                             </thead>
++                                             <tbody>
++                                             {% for el in key.1 %}
++                                                 <tr>
++                                                     <td>{{ el.0 }}</td>
++                                                     <td>{{ el.1 }}</td>
++                                                     <td>{{ el.2 }}</td>
++                                                     <td>{{ el.3 }}</td>
++                                                     <td>{{ el.4 }}</td>
++                                                     <td>{{ el.5 }}</td>
++                                                     <td>{{ el.6 }}</td>
++                                                 </tr>
++                                             {% endfor %}
++                                             </tbody>
++                                         </table>
++                                    </div>
++                               {% endif %}
++                           {% endfor %}
++                        </div>
++                    </div>
++            {% else %}
++               <p class="text-danger">Заявки по проекту с выбранным файлом не найдены.</p>
++            {% endif %}
++
++            <p class="main-description">2.4 Потоки трафика**</p>
+                           {% if messages %}
+                                   {% for message in messages %}
+                                       {% if message.tags == 'error' %}
+@@ -153,4 +202,20 @@
+ 
+ </script>
+ </div>
++
++<script>
++    {# Просмотр предыдущей заявки #}
++      $(document).ready(function() {
++        $('#arrow-down').on('click', function() {
++          var toggleState = $(this).data('toggle-state');
++          if (toggleState) {
++            $('#prev-info-container').slideUp();
++            $(this).data('toggle-state', false);
++          } else {
++            $('#prev-info-container').slideDown();
++            $(this).data('toggle-state', true);
++          }
++        });
++      });
++</script>
+ {% endblock %}
+
+
+==== File: accesslist/views.py ====
+@@ -55,7 +55,6 @@ class ObjectMixin:
+         tmp = None
+         #Очищаем кеш активностей (бага с быстрым выполнением JOB)
+         cache.set(acl_id, {})
+-
+         if acl_id is None:
+             if 'uuid' in request.session is not None:
+                 if request.session['uuid']:
+@@ -84,6 +83,7 @@ class ObjectMixin:
+             if '/new/' not in request.path:
+                 #ClearSessionMeta()
+                 tmp = get_object_or_404(ACL, id=str(acl_id))
++
+                 request.session['LOCAL_STORAGE'] = json.loads(tmp.acltext)
+                 request.session['taskid'] = tmp.taskid or ''
+ 
+@@ -125,8 +125,23 @@ class ObjectMixin:
+                             request.session[ACT] = True
+                         # else:
+                         #     request.session['GIT_URL'] = ACT
+-
+             if 'LOCAL_STORAGE' in request.session:
++                if 'acl_create_info.html' in request.session["LOCAL_STORAGE"]:
++                    acl_proj = request.session["LOCAL_STORAGE"]["acl_create_info.html"][4]
++                    acl_git_file = request.session["LOCAL_STORAGE"]["acl_create_info.html"][-1]
++                    latest_acl_obj = ACL.objects.filter(project=acl_proj, git_filename=acl_git_file, status__in=["JOB", "CMP"])
++                    if len(latest_acl_obj) > 0:
++                        latest_acl_obj = latest_acl_obj.latest("created")
++                        latest_local_storage = json.loads(latest_acl_obj.acltext)
++                        latest_uuid = latest_acl_obj.id
++                        latest_project = latest_acl_obj.project
++                        latest_git_file = latest_acl_obj.git_filename
++                        context['latest_local_storage'] = latest_local_storage
++                        context['latest_uuid'] = latest_uuid
++                        context['latest_project'] = latest_project
++                        context['latest_git_file'] = latest_git_file
++                    else:
++                        print('Последнего acl не найдено.')
+                 context.update({'acl_id': str(acl_id),
+                                 'FULL_STORAGE': request.session['LOCAL_STORAGE'],
+                                 'FORM_APPLICATION_KEYS': FORM_APPLICATION_KEYS,
+
+
+==== File: static/css/style.css ====
+@@ -1113,4 +1113,24 @@ position: absolute;
+ }
+ .instruction_content {
+     display: none;
++}
++
++.arrow-down:before{
++    float:right;
++    color:gray;
++}
++.arrow-down:after{
++	content: "";
++    margin:0 0.5em;
++    display:inline-block;
++    border: 7px solid transparent;
++    border-top:8px solid gray;
++    border-bottom:0 none;
++}
++.arrow-down {
++    display:inline-block;
++    padding:0.5em;
++    border:solid 1px gray;
++    border-radius:0.25em;
++    box-shadow:0 0 2px 1px gray
+ }
+\ No newline at end of file
+
+

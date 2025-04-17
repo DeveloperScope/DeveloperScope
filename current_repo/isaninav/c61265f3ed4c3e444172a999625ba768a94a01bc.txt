@@ -1,0 +1,18 @@
+==== File: .gitlab-ci.yml ====
+@@ -35,10 +35,10 @@ lint_code:
+     - tar -czf $backup_archive.tar.gz $SITE_ROOT
+     - ls -las $CI_PROJECT_DIR
+     - cp -r $CI_PROJECT_DIR/* $SITE_ROOT
+-    - $SITE_ROOT/eacl/bin/pip config set global.index https://nx.alfastrah.ru/repository/pypi-proxy/pypi
+-    - $SITE_ROOT/eacl/bin/pip config set global.index-url https://nx.alfastrah.ru/repository/pypi-proxy/simple
+-    - $SITE_ROOT/eacl/bin/pip config set global.trusted-host nx.alfastrah.ru
+-    - $SITE_ROOT/eacl/bin/pip install --upgrade -r requirements.txt
++    - python -m pip config set global.index https://nx.alfastrah.ru/repository/pypi-proxy/pypi
++    - python -m pip config set global.index-url https://nx.alfastrah.ru/repository/pypi-proxy/simple
++    - python -m pip config set global.trusted-host nx.alfastrah.ru
++    - python -m pip install --upgrade -r requirements.txt
+   allow_failure: true
+   artifacts:
+     reports:
+
+

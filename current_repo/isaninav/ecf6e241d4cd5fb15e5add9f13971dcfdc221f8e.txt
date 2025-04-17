@@ -1,0 +1,130 @@
+==== File: accesslist/templates/acl_overview.html ====
+@@ -3,39 +3,52 @@
+ {% block row %}
+  <div class="col-2 d-none d-md-block d-lg-block" style="min-width: 270px;">
+             <img class="img-fluid" src="{% static 'img/network.png' %}" style="height: 450px">
++            {% if taskid%}
++                <p> taskid: {{ taskid }}</p>
++                <script>console.log('taskid is exist');</script>
++            {% else %}
++                <p> taskid is none</p>
++                <script>console.log('taskid is none');</script>
++            {% endif %}
+             </div>
+             <div class="col-7 mt-5">
+                 <div class="card text-center">
+                       <div class="card-body">
+                           <ul class="list-group list-group-flush border-0" style=""> <!--align-items: center;-->
+-                              {% if tasks.items|length > 0 %}
+-                                    {% for task in tasks.items %}
+-                                            <li class="list-group-item {{ task.0 }} border-0" style="display: inline-flex;text-align: left;">
+-                                                <div style="width: 285px">
+-                                                    <p class="card-text mr-1">{{ task.1 }}</p>
+-                                                </div>
+-                                                <div class="status d-inline-flex">
+-                                                      <div class="d-flex justify-content-center ml-1">
+-                                                      <div class="spinner-border text-success" role="status">
+-                                                          <span class="sr-only">Loading...</span>
+-                                                        </div>
+-                                                 </div>
+-                                                 </div>
+-                                            </li>
+-                                    {% endfor %}
+-                              {% else %}
++                              {% if taskid %}
+                                   {% if status == 'JOB' %}
+-                                    <li class="list-group-item list-group-item-git border-0">
+-                                    <p class="card-text">Ваше обращение уже в работе (№ обр.: {% if taskid  %}{{ taskid }}
+-                                        {% else %} В почте {%endif%})</p>
+-                                     <a href="{% url 'aclhistory_urls' %}{{obj}}/" style="font-size: 18px" class="text-primary">Посмотреть можно тут</a>
+-                                    </li>
++                                        <li class="list-group-item list-group-item-git border-0">
++                                            <p class="card-text">Ваше обращение уже в работе (№ обр.: {% if taskid  %}{{ taskid }} {% else %} В почте {%endif%})</p>
++                                            <a href="{% url 'aclhistory_urls' %}{{obj}}/" style="font-size: 18px" class="text-primary">Посмотреть можно тут</a>
++                                        </li>
+                                   {% else %}
+-                                     <li class="list-group-item list-group-item-git border-0">
+-                                    <p class="card-text">Ваше обращение сохранено.</p>
+-                                     <a href="{% url 'aclhistory_urls' %}{{obj}}/" style="font-size: 18px" class="text-primary">Посмотреть можно тут</a>
+-                                    </li>
++                                        <li class="list-group-item list-group-item-git border-0">
++                                            <p class="card-text">Данному ACL уже назначен номер. Повторно отправить не получится. (№ обр.: {{ taskid }})</p>
++                                            <a href="{% url 'aclhistory_urls' %}{{obj}}/" style="font-size: 18px" class="text-primary">Посмотреть можно тут</a>
++                                        </li>
+                                   {% endif %}
++                              {% else %}
++                                    {% if tasks.items|length > 0 %}
++                                        {% for task in tasks.items %}
++                                                <li class="list-group-item {{ task.0 }} border-0" style="display: inline-flex;text-align: left;">
++                                                    <div style="width: 285px">
++                                                        <p class="card-text mr-1">{{ task.1 }}</p>
++                                                    </div>
++                                                    <div class="status d-inline-flex">
++                                                          <div class="d-flex justify-content-center ml-1">
++                                                          <div class="spinner-border text-success" role="status">
++                                                              <span class="sr-only">Loading...</span>
++                                                            </div>
++                                                     </div>
++                                                     </div>
++                                                </li>
++                                        {% endfor %}
++                                    {% else %}
++                                         <li class="list-group-item list-group-item-git border-0">
++                                        <p class="card-text">Ваше обращение сохранено.</p>
++                                         <a href="{% url 'aclhistory_urls' %}{{obj}}/" style="font-size: 18px" class="text-primary">Посмотреть можно тут</a>
++                                        </li>
++                                    {% endif %}
+                               {% endif %}
+ 
+                                 <li class="list-group-item list-group-item-footer w-100">
+@@ -62,27 +75,6 @@
+     let counter = 0;
+     let uuid = "{{ obj }}";
+     let int_status = 0 ;
+-    {% if status == 'JOB' and tasks.items|length > 0 %}
+-         let wd = prompt('Обратите внимание, данный ACL уже находится на исполнении, для подтверждения повторного обращения, напишите "Да"');
+-         if (!wd || wd.toLowerCase() != 'да')
+-         {
+-                 $(".card-body").hide();
+-                 window.location.href = "{% url 'aclcreate_urls' %}{{obj}}/";
+-         }
+-    {% endif %}
+-
+-     {% if tasks.items|length > 0 %}
+-        {% if taskid %}
+-             if (counter == 0)
+-             {
+-             let wd = prompt('Обратите внимание, данный ACL уже выполнен в SD под номером {{ taskid }}, для подтверждения повторного обращения, напишите "Да"');
+-             if (!wd || wd.toLowerCase() != 'да')
+-             {
+-                 $(".card-body").hide();
+-                 window.location.href = "{% url 'aclcreate_urls' %}{{obj}}/";
+-             }
+-             }
+-        {% endif %}
+ 
+         $.getJSON('/acl/task/{{ obj }}/', function(data){
+              //return RequestHandler(data, null);
+
+
+==== File: accesslist/views.py ====
+@@ -1005,9 +1005,14 @@ def task(request, acl_id)->bool:
+ 
+     if any([job for job in tasklist if job in request.session]) and JOB.__len__() == 0:
+         cache.set(acl_id, {})
+-        obj.status = 'FLY'
+-        with transaction.atomic():
+-            obj.save(update_fields=['status'])
++        if obj.taskid != '':
++            logger.info('Номер существует')
++        else:
++            logger.info('[НОМЕР обращения не задан!]')
++            obj.status = 'FLY'
++            with transaction.atomic():
++                obj.save(update_fields=['status'])
++
+     sleep(1)
+     is_work_done = False
+     result_id = None
+
+

@@ -1,0 +1,9 @@
+{
+    "python.envFile": "${workspaceFolder}/.env",
+      "[python]": {
+          "editor.defaultFormatter": "ms-python.black-formatter"
+        },
+      "isort.args": ["--profile", "black"],
+      "python.linting.mypyEnabled": true,
+      "autoDocstring.docstringFormat": "numpy",
+  }

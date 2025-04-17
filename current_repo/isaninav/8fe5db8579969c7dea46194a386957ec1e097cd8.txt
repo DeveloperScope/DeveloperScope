@@ -1,0 +1,14 @@
+==== File: accesslist/admin.py ====
+@@ -3,7 +3,7 @@ from .models import ACL
+ # Register your models here.
+ 
+ class ACLAdmin(admin.ModelAdmin):
+-    list_display = ('project', 'status', 'owner', 'id', 'taskid')
+-    list_filter = ('status',)
++    list_display = ('project', 'status', 'owner', 'id', 'taskid', 'created')
++    list_filter = ('status', 'created')
+ 
+ admin.site.register(ACL,ACLAdmin)
+\ No newline at end of file
+
+

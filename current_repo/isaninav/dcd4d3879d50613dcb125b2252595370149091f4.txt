@@ -1,0 +1,14 @@
+==== File: ownerlist/utils.py ====
+@@ -1801,10 +1801,6 @@ def send_to_mattermost(*messages):
+         for message in messages:
+             text += f"{message}\n"
+ 
+-    payload = {"text": text}
+-    response = requests.post(settings.MATTERMOST_WEBHOOK_URL, json=payload)
+-    if response.status_code != 200:
+-        logger.warning("[Send to Mattermost] Failed to send message. Error: ", response.status_code)
+         payload = {"text": text}
+         response = requests.post(settings.MATTERMOST_WEBHOOK_URL, json=payload)
+         logger.info(f"response = {response}")
+
+

@@ -1,0 +1,9 @@
+==== File: acladmin/context_processors.py ====
+@@ -0,0 +1,5 @@
++from django.conf import settings
++
++
++def commit_tag(request):
++    return {"commit_tag": settings.COMMIT_TAG}
+
+

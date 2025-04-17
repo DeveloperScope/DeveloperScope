@@ -1,0 +1,75 @@
+==== File: ownerlist/utils.py ====
+@@ -1629,6 +1629,11 @@ def send_onmitracker(sender, title, text, attach, proxy=None, fake=None, request
+             logger.error('[{}] Отправка запроса в {}'.format(i, settings.OMNITRACKER_URL))
+             logger.error('[TRACE] Тело запроса: ' + body.decode())
+             res = requests.post(settings.OMNITRACKER_URL, body, headers=OMNI_HTTP_HEADERS, timeout=settings.TIMEOUT, auth=auth)
++            if i == 2:
++                send_to_mattermost(f"Попытка подключения номер: {i}.",
++                                   f"res: {res.text}",
++                                   f"uid: {uid}",
++                )
+             if res and res.status_code == 200:
+                         result = res.text
+                         logger.error('OMNITRACKER ANSWER ====' + result)
+@@ -1645,6 +1650,10 @@ def send_onmitracker(sender, title, text, attach, proxy=None, fake=None, request
+                                                          'Сервер omni вернул неправильный ответ', 0)
+                                     if settings.DEBUG:
+                                         logger.error('[TRACE] Сервер omni вернул неправильный ответ {} '.format(res.text))
++                                        send_to_mattermost(f"[TRACE] Сервер omni вернул неправильный ответ: {res.text}"
++                                                            f"Попытка номер: {i}",
++                                                           f"uid: {uid}"
++                                        )
+                                     result = 0
+                         break
+             else:
+@@ -1663,14 +1672,29 @@ def send_onmitracker(sender, title, text, attach, proxy=None, fake=None, request
+                     sleep(i)
+         except requests.Timeout:
+                 #if settings.DEBUG:
++                    send_to_mattermost("Подключение не удалось по таймауту (Timeout).",
++                                       f"Попытка подключения номер: {i}.",
++                                       f"OMNITRACKER_URL: {settings.OMNITRACKER_URL}",
++                                       f"uid: {uid}",
++                    )
+                     logger.error('[TRACE] Подключение не удалось по таймауту к {}'.format(settings.OMNITRACKER_URL))
+                     UpdateCallBackStatus(request, uid, 'omni_email_status', 'Повторная отправка сообщения в SD ({})'.format(i), 1)
+         except requests.ConnectionError:
+             #if settings.DEBUG:
++                send_to_mattermost("Сервис не отвечает (Connection Error).",
++                               f"Попытка подключения номер: {i}.",
++                               f"OMNITRACKER_URL: {settings.OMNITRACKER_URL}",
++                               f"uid: {uid}",
++                )
+                 logger.error('[TRACE] Сервис {} не отвечает'.format(settings.OMNITRACKER_URL))
+                 UpdateCallBackStatus(request, uid, 'omni_email_status', 'Повторная отправка сообщения в SD ({})'.format(i), 1)
+ 
+         except Exception as e:
++            send_to_mattermost(f"Ошибка Omni request: {e}.",
++                               f"Попытка номер: {i}.",
++                               f"OMNITRACKER_URL: {settings.OMNITRACKER_URL}",
++                               f"uid: {uid}",
++                               )
+             UpdateCallBackStatus(request, uid, 'omni_email_status', 'Повторная отправка сообщения в SD ({})'.format(i), 1)
+             logger.error('[Omni request] ' + str(e))
+             if settings.DEBUG:
+@@ -1763,4 +1787,15 @@ def SendMessageToApprove(acl_id, acl_owner, user, token=''):
+     e.content_subtype = "html"
+     e.send(fail_silently=settings.DEBUG)
+     if settings.DEBUG:
+-        print("https://acl.vesta.ru/acl/pending/{}/?token={}".format(acl_id, token))
+\ No newline at end of file
++        print("https://acl.vesta.ru/acl/pending/{}/?token={}".format(acl_id, token))
++
++def send_to_mattermost(*messages):
++    text = ''
++
++    for message in messages:
++        text += f"{message}\n"
++
++    payload = {"text": text}
++    response = requests.post(settings.MATTERMOST_WEBHOOK_URL, json=payload)
++    if response.status_code != 200:
++        logger.warning("[Send to Mattermost] Failed to send message. Error: ", response.status_code)
+\ No newline at end of file
+
+

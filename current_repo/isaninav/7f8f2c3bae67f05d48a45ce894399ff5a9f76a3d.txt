@@ -1,0 +1,233 @@
+==== File: accesslist/templates/acl_create_info.html ====
+@@ -199,26 +199,18 @@
+               {% endif %}
+           </div>
+           <div class="form-row__footer__ col-6 col-md-8 col-sm-12">
+-              <div class="m-3">
+-                    <h4 class="main-title">Выполнение обращения <span class="badge badge-warning">Опционно</span></h4>
+-              </div>
+-
+               <div class="contact-form__submit" style="margin: 15px">
+                     <div class="form-check form-switch">
+-                      <input class="form-check-input big__check" type="checkbox" name="action_make_docx" id="action_make_docx"  checked style="display:none;">
+-<!--                      <label class="form-check-label big__check__label" for="action_make_docx">Создать docx файл</label>-->
++                      <input class="form-check-input" type="checkbox" name="action_make_docx" id="action_make_docx" checked style="display:none;">
+                     </div>
+                     {% if status != 'WTE' %}
+-                     <div class="form-check form-switch">
+-                      <input class="form-check-input big__check" type="checkbox" id="action_make_git" name="action_make_git" checked style="display:none;">
+-<!--                      <label class="form-check-label big__check__label" for="action_make_git" >Отправить md файл в Gitlab проект</label>-->
+-<!--                      <p class="git__label ml-2 text-muted text-lowercase text-danger">{{request.session.GIT_URL}}</p>-->
++                    <div class="form-check form-switch">
++                      <input class="form-check-input" type="checkbox" id="action_make_git" name="action_make_git" checked style="display:none;">
+                     </div>
+ 
+ 
+                     <div class="form-check form-switch">
+-                      <input class="form-check-input big__check" type="checkbox" id="action_make_omni" name="action_make_omni" {% if 'ACT_OMNI' in request.session %} checked {% endif %}>
+-                      <label class="form-check-label big__check__label" for="action_make_omni">Отправить обращение в OmniTracker</label>
++                      <input class="form-check-input" style="width: 1.55rem; height: 1.55rem; top: .8rem; display:none;" type="checkbox" id="action_make_omni" name="action_make_omni" checked>
+                     </div>
+                    {% endif %}
+               </div>
+@@ -383,25 +375,18 @@
+ </div>
+ </div>
+           <div class="form-row__footer__ col-6 col-md-8 col-sm-12">
+-              <div class="m-3">
+-                    <h4 class="main-title">Выполнение обращения <span class="badge badge-warning">Опционно</span></h4>
+-              </div>
+-
+               <div class="contact-form__submit" style="margin: 15px">
+                     <div class="form-check form-switch">
+-                      <input class="form-check-input big__check" type="checkbox" name="action_make_docx" id="action_make_docx" checked style="display:none;">
+-<!--                      <label class="form-check-label big__check__label" for="action_make_docx">Создать docx файл</label>-->
++                      <input class="form-check-input" type="checkbox" name="action_make_docx" id="action_make_docx" checked style="display:none;">
+                     </div>
+ 
+                      <div class="form-check form-switch">
+-                      <input class="form-check-input big__check" type="checkbox" id="action_make_git" name="action_make_git" checked style="display:none;">
+-<!--                      <label class="form-check-label big__check__label" for="action_make_git">Отправить md файл в Gitlab проект</label>-->
++                      <input class="form-check-input" type="checkbox" id="action_make_git" name="action_make_git" checked style="display:none;">
+                     </div>
+ 
+ 
+                     <div class="form-check form-switch">
+-                      <input class="form-check-input big__check" type="checkbox" id="action_make_omni" name="action_make_omni" checked>
+-                      <label class="form-check-label big__check__label" for="action_make_omni">Отправить обращение в OmniTracker</label>
++                      <input class="form-check-input" style="width: 1.55rem; height: 1.55rem; top: .8rem; display:none;" type="checkbox" id="action_make_omni" name="action_make_omni" checked>
+                     </div>
+               </div>
+ 
+@@ -505,41 +490,8 @@
+             git_url = $.trim(git_url);
+             SetGitURL(git_url, git_file);
+         }
+-
+     });
+ 
+-    $(".big__check").change(function(e){
+-        let el =  $(this);
+-        let act = '';
+-
+-        {   try{
+-            act = el[0].id.split('_')[2];
+-        } catch (e) {
+-
+-        }
+-            if ($(el[0]).is(':checked'))
+-            {
+-                if (act == 'git') return false;
+-
+-                {#  $.post(`/acl/act/${window.acl_id}/${act}/add/`,function(){}).fail(function(){#}
+-                {#    ShowNotify(0, 'Ошибка');#}
+-                {#}).done(function(){#}
+-                {#    ShowNotify(2, 'Данные изменены');#}
+-                {#});#}
+-               // console.log('Add: %s', act);
+-            } else
+-            {
+-                {#  $.post(`/acl/act/${window.acl_id}/${act}/remove/`,function(){}).fail(function(){#}
+-                {#    ShowNotify(0, 'Ошибка');#}
+-                {#}).done(function(){#}
+-                {#    ShowNotify(2, 'Данные изменены');#}
+-                {#});#}
+-                //console.log('Remove: %s', act);
+-            }
+-
+-        }
+-
+-    });
+     document.getElementById('upload-from-git-btn').addEventListener('click', function(e) {
+         e.preventDefault();
+         upload_from_git_btn = document.getElementById('upload-from-git-btn');
+
+
+==== File: accesslist/views.py ====
+@@ -154,7 +154,6 @@ class ObjectMixin:
+                         if self.template in request.session['LOCAL_STORAGE']:
+                             del request.session['LOCAL_STORAGE'][self.template]
+                     else:
+-
+                         if self.template in request.session['LOCAL_STORAGE']:
+                             request.session['LOCAL_STORAGE'].update({self.template: tmp[self.template]})
+                         else:
+@@ -702,9 +701,9 @@ def AclStageChange(request,  *args, **kwargs):
+                                             #Проверяем можем ли направить обращение автоматически
+                                             if settings.MAKE_TASK_AFTER_APRROVE: #
+                                                 sendtext = 'Ваше обращение согласовано и уже отправлено на исполнение'
+-                                                logger.info('Обращение {} будет выполнено через бекендн'.format(uuid))
++                                                logger.info('Обращение {} будет выполнено через бекенд'.format(uuid))
+                                                 if settings.DEBUG:
+-                                                    print('Обращение {} будет выполнено через бекендн'.format(uuid))
++                                                    print('Обращение {} будет выполнено через бекенд'.format(uuid))
+                                                 th = threading.Thread(target=MakeBackgroundTask,
+                                                                                                      kwargs={
+                                                                                                          "request": request,
+@@ -985,7 +984,7 @@ def task(request, acl_id)->bool:
+         gitlab_project = obj.project
+         gitlab_repo_url = ACLGitlabStore.objects.get(project=gitlab_project).gitlab_url
+         doc_result = make_doc(request, request.session['LOCAL_STORAGE'], gitlab_repo_url=gitlab_repo_url, gitlab_filename=gitlab_filename)
+-        doc_ready= True
++        doc_ready = True
+     except Exception as e:
+         UpdateCallBackStatus(request, acl_id, 'docx_download_status',
+                              'Произошла ошибка при создании docx файла: {}'.format(e), 0)
+@@ -1339,19 +1338,22 @@ def makeAndDownloadMdAndDocx(request, acl_id):
+     gitlab_filename = local_storage['acl_create_info.html'][9]
+ 
+     file_type = request.GET.get('file_type') or None
+-
+     try:
+-        if file_type:
++        if file_type is not None:
+             if file_type == 'docx':
+                 acl_project = local_storage['acl_create_info.html'][4]
+                 gitlab_repo_url = ACLGitlabStore.objects.get(project=acl_project).gitlab_url
+-                file_path = make_doc(request, local_storage, gitlab_repo_url=gitlab_repo_url, gitlab_filename=gitlab_filename) or None
++                file_path = make_doc(request, local_storage, gitlab_repo_url=gitlab_repo_url,
++                                                             gitlab_filename=gitlab_filename)
+             elif file_type == 'md':
+                 filename_without_extension = os.path.splitext(gitlab_filename)[0]
+-                file_path = MakeMarkDown(request, local_storage, filename_without_extension, acl_id) or None
+-            if file_path:
++                file_path = MakeMarkDown(request, local_storage, filename_without_extension, acl_id)
++
++            if file_path is not None:
+                 file_name = os.path.basename(file_path)
+                 return FileResponse(open(f'static/{file_type}/{file_name}', 'rb'))
++        logger.error(f'[MAKE FILE] Не удалось сформировать файл. file_type:{file_type}; file_path:{file_path};')
++        AclOver()
+     except Exception as e:
+-        logger.error(f'[MAKE FILE] Не удалось сформировать файл:Ошибка:{e};')
++        logger.error(f'[MAKE FILE] Exctption: Не удалось сформировать файл. file_type:{file_type}; file_path:{file_path}; Ошибка:{e};')
+         AclOver()
+
+
+==== File: ownerlist/utils.py ====
+@@ -174,37 +174,33 @@ def request_handler(request, namespace=''):
+     cnt_key = 0
+     empty_key = 0
+     if namespace == FORM_APPLICATION_KEYS[0]: #first
+-            LOCAL_STORAGE[namespace] = []
+-            for idx, post_key in enumerate(POST_FORM_KEYS):
+-                if idx == len(POST_FORM_KEYS) - 1:
+-                    if request.POST.get(post_key) in POST_FORM_EMPTY:
+-                        LOCAL_STORAGE[namespace].append(INFINITY)
+-                        continue
+-
+-                if request.POST.get(post_key) not in POST_FORM_EMPTY:
+-                     LOCAL_STORAGE[namespace].append(request.POST.get(post_key))
+-                else:
++        LOCAL_STORAGE[namespace] = []
++        for idx, post_key in enumerate(POST_FORM_KEYS):
++            if idx == len(POST_FORM_KEYS) - 1:
++                if request.POST.get(post_key) in POST_FORM_EMPTY:
+                     LOCAL_STORAGE[namespace].append(INFINITY)
+-                   # return False
+-            if namespace == FORM_APPLICATION_KEYS[0]:
+-                    if request.POST.get('action_make_docx', '') == 'on':
+-                        request.session['ACT_MAKE_DOCX'] = True
+-                    elif 'ACT_MAKE_DOCX' in request.session:
+-                         del request.session['ACT_MAKE_DOCX']
+-
+-                    if request.POST.get('action_make_git', '') == 'on':
+-                        request.session['ACT_MAKE_GIT'] = True
+-                    elif 'ACT_MAKE_GIT' in request.session:
+-                         del request.session['ACT_MAKE_GIT']
+-                         # if 'GIT_URL' in request.session:
+-                         #     del request.session['GIT_URL']
+-
+-                    if request.POST.get('action_make_omni', '') == 'on':
+-                        request.session['ACT_OMNI'] = True
+-                    elif 'ACT_OMNI' in request.session:
+-                            del request.session['ACT_OMNI']
+-
+-                    #request.session.modified = True
++                    continue
++
++            if request.POST.get(post_key) not in POST_FORM_EMPTY:
++                 LOCAL_STORAGE[namespace].append(request.POST.get(post_key))
++            else:
++                LOCAL_STORAGE[namespace].append(INFINITY)
++
++        if namespace == FORM_APPLICATION_KEYS[0]:
++                if request.POST.get('action_make_docx', '') == 'on':
++                    request.session['ACT_MAKE_DOCX'] = True
++                elif 'ACT_MAKE_DOCX' in request.session:
++                     del request.session['ACT_MAKE_DOCX']
++                if request.POST.get('action_make_git', '') == 'on':
++                    request.session['ACT_MAKE_GIT'] = True
++                elif 'ACT_MAKE_GIT' in request.session:
++                    del request.session['ACT_MAKE_GIT']
++                if request.POST.get('action_make_omni', '') == 'on':
++                    request.session['ACT_OMNI'] = True
++                elif 'ACT_OMNI' in request.session:
++                    del request.session['ACT_OMNI']
++
++                #request.session.modified = True
+ 
+     else:
+         if namespace == FORM_APPLICATION_KEYS[-2]: #Traffic page
+
+

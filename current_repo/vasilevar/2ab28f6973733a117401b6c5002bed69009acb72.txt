@@ -1,0 +1,12 @@
+==== File: ownerlist/utils.py ====
+@@ -1185,7 +1185,7 @@ def make_doc(
+         def compare_rows(row1, row2):
+             return all(
+                 str(cell1).strip() == str(cell2).strip()
+-                for cell1, cell2 in zip(row1, row2, strict=False)
++                for cell1, cell2 in zip(row1, row2)  # noqa: B905
+             )
+ 
+         # Очистка таблицы
+
+

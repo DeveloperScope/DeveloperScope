@@ -1,0 +1,18 @@
+==== File: .gitignore ====
+@@ -0,0 +1 @@
++.env
+\ No newline at end of file
+
+
+==== File: accesslist/templates/acl_create_info.html ====
+@@ -129,7 +129,7 @@
+              <label class="contact-form__label">
+                 <span class="contact-form__text" style="max-width: 140px">Описание
+                     проекта (wiki)</span>
+-                <input type="url" name="link" value="{% if LOCAL_STORAGE %}{{ LOCAL_STORAGE.5 }}{% endif %}" class="contact__input" placeholder="https://wiki.alfastrah.ru/pages/viewpage.action?pageId=133435707" pattern=".+(wiki.*)+(.){5,}">
++                <input type="url" name="link" value="{% if LOCAL_STORAGE %}{{ LOCAL_STORAGE.5 }}{% endif %}" class="contact__input" placeholder="https://wiki.alfastrah.ru/pages/viewpage.action?pageId=133435707" pattern="^https:\/\/wiki.alfastrah.ru(.*)$" title="https://wiki.alfastrah.ru/pages/viewpage.action?pageId=133435707" required>
+                 <span class="validity"></span>
+               </label>
+ </div>
+
+

@@ -1,0 +1,26 @@
+==== File: accesslist/views.py ====
+@@ -851,7 +851,7 @@ def task(request, acl_id)->bool:
+                         docx_url = 'https://' + docx_url
+ 
+                     result_id = send_onmitracker(sender=obj.owner.email,
+-                                                 title=f'SH0458 Запрос на предоставление доступа согласован : {str(ACL.objects.get(id=acl_id).approve.get_full_name())}',
++                                                 title=f'SH0458 Запрос на предоставление доступа согласован : {str(ACL.objects.get(id=acl_id).approve.first().get_full_name())}',
+                                                  text=f'Прошу предоставить сетевой доступ, согласно ACL. Согласование владельца ресурса во вложении. Ссылка на ACL :https://acl.vesta.ru/acl/info/{str(acl_id)}',
+                                                  attach=docx_url,
+                                                  fake=False,
+@@ -884,10 +884,10 @@ def task(request, acl_id)->bool:
+                 sleep(3) #Ждем callback для уведомления пользователю
+ 
+                 doc_result = os.path.join(BASE_DIR, doc_result[1:])
+-                logger.error('ТЕМА ПИСЬМА ' + 'SH0458 Предоставление доступа  Согласовано = '+ str(ACL.objects.get(id=acl_id).approve.get_full_name()))
++                logger.error('ТЕМА ПИСЬМА ' + 'SH0458 Предоставление доступа  Согласовано = '+ str(ACL.objects.get(id=acl_id).approve.first().get_full_name()))
+ 
+-                e = EmailMessage(subject='SH0458 Запрос на предоставление доступа был согласован :  '+ str(ACL.objects.get(id=acl_id).owner.get_full_name()),
+-                                 body='Прошу предоставить сетевой доступ, согласно ACL. Согласование владельца ресурса во вложении. /n Запрос на предоставление доступа был согласован :  '+ str(ACL.objects.get(id=acl_id).owner.get_full_name()) +'/n Ссылка на ACL : https://acl.vesta.ru'+ '/acl/info/'+str(acl_id),
++                e = EmailMessage(subject='SH0458 Запрос на предоставление доступа согласован :  '+ str(ACL.objects.get(id=acl_id).approve.first().get_full_name()),
++                                 body='Прошу предоставить сетевой доступ, согласно ACL. Согласование владельца ресурса во вложении. Ссылка на ACL : https://acl.vesta.ru'+ '/acl/info/'+str(acl_id),
+                                  from_email=obj.owner.email,
+                                  to=[settings.EMAIL_SD], reply_to=[settings.EMAIL_ADMIN])
+                 e.attach_file(doc_result)
+
+

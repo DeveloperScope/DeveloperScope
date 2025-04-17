@@ -1,0 +1,23 @@
+==== File: acladmin/celery.py ====
+@@ -13,6 +13,6 @@ app.autodiscover_tasks()
+ app.conf.beat_schedule = {
+     "check-acl-status": {
+         "task": "acladmin.tasks.check_acl_status",
+-        "schedule": crontab(minute="*/25"),
++        "schedule": crontab(minute="*/60"),
+     },
+ }
+
+
+==== File: acladmin/tasks.py ====
+@@ -100,7 +100,7 @@ def check_acl_status():
+     for acl_object in acl_objects:
+         try:
+             check_acl_in_omni(acl_object)
+-            time.sleep(5)
++            time.sleep(15)
+         except Exception as e:
+             print(f"[acl_portal][Celery check_acl_status] Ошибка проверки статуса acl({acl_object.id}). Ошибка:{e}")
+             send_to_mattermost(f"[acl_portal][Celery check_acl_status] Ошибка проверки статуса acl({acl_object.id}). Ошибка:{e}")
+
+

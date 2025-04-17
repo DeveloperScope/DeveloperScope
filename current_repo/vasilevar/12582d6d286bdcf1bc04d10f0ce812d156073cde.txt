@@ -1,0 +1,173 @@
+==== File: accesslist/templates/acl_create_info.html ====
+@@ -638,26 +638,28 @@
+     }
+ </script>
+ <script>
+-<!--  Update projects from gitlab  -->
+-    $('#gitlab_proj_upload_dropdown').on('click', function() {
+-        var csrfToken = $('input[name="csrfmiddlewaretoken"]').val();
+-        $.ajax({
+-            url: '/acl/git_update_projects/',
+-            type: 'GET',
+-            headers: {'X-CSRFToken': csrfToken},
+-            success: function(data) {
+-                project_list = JSON.parse(data);
+-                $.each(project_list, function(index, value){
+-                    var newOption = new Option(value.project, value.project);
+-                    $(newOption).attr('data-gitlab-url', value.gitlab_url);
+-                    $('#gitlab_proj_upload_dropdown').append(newOption);
+-                });
+-            },
+-            error: function(xhr, status, error) {
+-                ShowNotify(0, 'Ошибка при синхронизации проектов');
+-            }
+-        });
++$('#gitlab_proj_upload_dropdown').on('click', function() {
++    var csrfToken = $('input[name="csrfmiddlewaretoken"]').val();
++    $.ajax({
++        url: '/acl/git_update_projects/',
++        type: 'GET',
++        headers: {'X-CSRFToken': csrfToken},
++        success: function(data) {
++            project_list = JSON.parse(data);
++            $.each(project_list, function(index, value){
++                var newOption = new Option(value.project, value.project);
++                $(newOption).attr('data-gitlab-url', value.gitlab_url);
++                $('#gitlab_proj_upload_dropdown').append(newOption);
++            });
++            // Установка фокуса после обновления
++            $('#gitlab_proj_upload_dropdown').select2('open');
++            $('#gitlab_proj_upload_dropdown').data("select2").dropdown.$search.focus();
++        },
++        error: function(xhr, status, error) {
++            ShowNotify(0, 'Ошибка при синхронизации проектов');
++        }
+     });
++});
+ </script>
+ 
+ <script>
+
+
+==== File: accesslist/templates/acl_traffic.html ====
+@@ -100,14 +100,20 @@
+                                 {% for widget in widgets %}
+                                     <td>
+                                         {% if "input_is_reserve" in widget %}
+-                                             <input class="form-control" style="width: 20px; height: 20px;" type="checkbox" name="{{widget}}_{% random_int %}" value="reserve" {% if item|get_index:forloop.counter0 == "reserve" %}checked{% endif %}>
+-                                             <label>Этот доступ Резервный?</label>
++                                             <input class="form-control"
++                                                   style="width: 20px; height: 20px;"
++                                                   type="checkbox"
++                                                   name="{{widget}}_{% random_int %}"
++                                                   value="reserve"
++                                                   title="Этот доступ резервный?"
++                                                   {% if item|get_index:forloop.counter0 == "reserve" %}checked{% endif %}>
+                                         {% elif "input__ip" in widget or widget == "input__host_port"%}
+                                             <input type="text" class="form-control" value="{{item|get_index:forloop.counter0}}" name="{{widget}}_{% random_int %}" {% if widget == "input__host_port" %} pattern="^[a-zA-Z]+/+(?:\d+|\d+-\d+)(?:,\s*(?:\d+|\d+-\d+))*$" placeholder="UDP/100-200" title="UDP/100-200" {% else %} pattern="^(any|((\d{1,2}|1\d\d|2[0-4]\d|25[0-5]).){3}(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])(/\d{1,2})?)$" title="1.1.1.1" {% endif %} autofocus required>
+                                         {% else %}
+                                             {% if "input__domain_source" in widget or "input__domain_dest" in widget %}
+-                                            <div class="form-group">  
++                                            <div class="form-group" style="position: relative;">
+                                               <textarea type="text" class="form-control {{widget}}_textarea" rows="1" cols="19" name="{{widget}}_{% random_int %}" autofocus required>{{item|get_index:forloop.counter0}}</textarea>
++                                              <span class="validity"></span>
+                                             </div>
+                                             <div class="form-group">   
+                                               <select class="{{widget}}_select form-control custom_domain_select" style="width:200px;">
+@@ -132,14 +138,20 @@
+                      {% for widget in widgets %}
+                                  <td>
+                                      {% if "input_is_reserve" in widget %}
+-                                         <input class="form-control" style="width: 20px; height: 20px;" type="checkbox" name="{{widget}}_{% random_int %}" value="reserve" {% if item|get_index:forloop.counter0 == "reserve" %}checked{% endif %}>
+-                                         <label>Этот доступ Резервный?</label>
++                                         <input class="form-control"
++                                               style="width: 20px; height: 20px;"
++                                               type="checkbox"
++                                               name="{{widget}}_{% random_int %}"
++                                               value="reserve"
++                                               title="Этот доступ резервный?"
++                                               {% if item|get_index:forloop.counter0 == "reserve" %}checked{% endif %}>
+                                      {% elif widget == "input__ip_source" or widget == "input__ip__external" or widget == "input__host_port" %}
+                                             <input type="text" class="form-control" value="{{item|get_index:forloop.counter0}}" name="{{widget}}_{% random_int %}" {% if widget == "input__ip_source" or widget == "input__ip__external" %} pattern="^(any|((\d{1,2}|1\d\d|2[0-4]\d|25[0-5]).){3}(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])(/\d{1,2})?)$" {% endif %} {% if widget == "input__host_port" %} pattern="^[a-zA-Z]+/+(?:\d+|\d+-\d+)(?:,\s*(?:\d+|\d+-\d+))*$" placeholder="UDP/100-200" title="UDP/100-200"{% endif %} autofocus required>
+                                      {% else %}
+                                             {% if "input__domain_source" in widget or "input__domain_dest" in widget %}
+-                                            <div class="form-group">
++                                            <div class="form-group" style="position: relative;">
+                                               <textarea type="text" class="form-control {{widget}}_textarea" rows="1" cols="19" name="{{widget}}_{% random_int %}" autofocus required>{{item|get_index:forloop.counter0}}</textarea>
++                                              <span class="validity"></span>
+                                             </div>
+                                             <div class="form-group">
+                                               <select class="{{widget}}_select form-control custom_domain_select" style="width:200px;">
+
+
+==== File: static/css/style.css ====
+@@ -612,27 +612,54 @@ width: 100%;
+ /*  background-color: green;*/
+ /*}*/
+ 
+-input:not([type='checkbox']):invalid+span:after, textarea:invalid+span:after {
+-    position: absolute;
+-    content: 'X';
+-    padding-left: 5px;
+-    color: #ba1010;
+-    font-weight: 700;
+ 
++/* Отображение креста валидации */
++/*input:not([type='checkbox']):invalid+span:after, textarea:invalid+span:after {*/
++/*    position: absolute;*/
++/*    content: 'X';*/
++/*    padding-left: 5px;*/
++/*    color: #ba1010;*/
++/*    font-weight: 700;*/
++/*}*/
++
++/*textarea:invalid + .validity:after {*/
++/*    content: 'X';*/
++/*    position: absolute;*/
++/*    right: 10px; !* Отступ от правого края *!*/
++/*    top: 50%; !* Центрирование по вертикали *!*/
++/*    transform: translateY(-50%); !* Центрирование по вертикали *!*/
++/*    color: #ba1010;*/
++/*    font-weight: 700;*/
++/*    display: inline-block; !* Убедитесь, что 'X' отображается как блочный элемент *!*/
++/*}*/
++
++textarea:invalid {
++    border: 2px solid #ba1010; /* Цвет и ширина рамки для невалидного textarea */
++    outline: none; /* Убираем стандартное обрамление */
++}
++
++input:invalid {
++    border: 2px solid #ba1010; /* Цвет и ширина рамки для невалидного input */
++    outline: none; /* Убираем стандартное обрамление */
++}
++
++textarea + .validity {
++    position: relative;
+ }
+ 
+ .contact-form__label > input:not([type='checkbox']):invalid+span:after{
+   margin-top: -15px;
+ }
+ 
+-input:not([type='checkbox']):valid+span:after, textarea:valid+span:after {
+-    position: absolute;
+-    content: '\2714';
+-    padding-left: 2px;
+-    color: #0d6a0d;
+-    font-weight: 700;
++/* Галка successful валидации */
++/*input:not([type='checkbox']):valid+span:after, textarea:valid+span:after {*/
++/*    position: absolute;*/
++/*    content: '\2714';*/
++/*    padding-left: 2px;*/
++/*    color: #0d6a0d;*/
++/*    font-weight: 700;*/
+ 
+-}
++/*}*/
+ 
+ 
+ .contact-form__label > input:not([type='checkbox']):valid+span:after {
+
+

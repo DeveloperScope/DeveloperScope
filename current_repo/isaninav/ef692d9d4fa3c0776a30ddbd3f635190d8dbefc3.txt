@@ -1,0 +1,29 @@
+==== File: accesslist/templates/acl_create_info.html ====
+@@ -45,11 +45,14 @@
+                          <p class="text-success pr-2">ACL cогласован </p> <a href="{% url 'acl_pending_urls' %}{{acl_id}}/?prepare=true">Подробнее</a>
+ {#                         <br>(теперь можно сформировать обращение)#}
+                     </div>
++                  {% elif status == 'JOB' %}
++                     <div class="justify-content-end approve-dialog">
++                         <p class="text-info pr-2">ACL На исполнении </p> </p> <a href="{% url 'acl_pending_urls' %}{{acl_id}}/?prepare=true">Подробнее</a>
++                    </div>
+ 
+                   {% elif status == 'CMP' %}
+                      <div class="justify-content-end approve-dialog">
+                          <p class="text-success pr-2">ACL выполнено </p> <a href="{% url 'acl_pending_urls' %}{{acl_id}}/?prepare=true">Подробнее</a>
+-{#                         <br>(теперь можно сформировать обращение)#}
+                     </div>
+ 
+                   {% elif status == 'CNL'%}
+@@ -61,8 +64,8 @@
+ 
+                     {%  if 'new' not in request.path %}
+                     <div class="justify-content-end d-inline-flex">
++                        {% if status != 'JOB' and status != 'CMP' %}
+                          <a class="btn btn-success m-1" href="{% url 'acloverview_urls' %}{{acl_id}}" style="max-height: 38px">Выполнить ACL</a>
+-                        {% if status != 'JOB' %}
+                          <button class="btn btn-danger btn-remove m-1" style="max-height: 38px">Удалить</button>
+                         {% endif %}
+                     </div>
+
+

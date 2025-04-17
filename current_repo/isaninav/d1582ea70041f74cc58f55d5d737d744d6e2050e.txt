@@ -1,0 +1,72 @@
+==== File: accesslist/templates/acl_create_info.html ====
+@@ -77,8 +77,12 @@
+                           <button type="button" class="btn btn-upload btn-secondary btn-lg m-1" id="btn-upload-from-git" data-toggle="modal" data-target="#upload-from-gitlab">Загрузить из gitlab</button>
+                         </div>
+                   {% endif %}
+-
+-
++                  {% if request.user.is_superuser %}
++                      <div class="justify-content-end d-inline-flex">
++                        <a href="{% url 'acl_download_file' acl_id=acl_id %}?file_type=docx" class="btn btn-secondary m-1 text-light make_and_download_file" role="button">Сформировать word</a>
++                        <a href="{% url 'acl_download_file' acl_id=acl_id %}?file_type=md" class="btn btn-secondary m-1 text-light make_and_download_file" role="button">Сформировать md</a>
++                      </div>
++                  {% endif %}
+           </div>
+           <div class="col-sm-2">
+    {% if '/new/' in request.path %}
+
+
+==== File: accesslist/urls.py ====
+@@ -16,6 +16,7 @@ urlpatterns = [
+         re_path(r"^$", AclCreate.as_view(), name="aclcreate_urls"),
+         re_path(r"^(?P<acl_id>[0-9a-f-]+)/$", AclCreate.as_view(), name="aclcreate_urls"),
+         re_path(r"^(?P<acl_id>[0-9a-f-]+)/new/$", AclCreate.as_view(), name="aclcreate_new_urls"),
++        re_path(r"^(?P<acl_id>[0-9a-f-]+)/download_file_docx_md/$", makeAndDownloadMdAndDocx, name='acl_download_file'),
+     ])),
+ 
+     re_path("internal/", include([
+
+
+==== File: accesslist/views.py ====
+@@ -3,7 +3,7 @@ import urllib
+ from django.forms import model_to_dict
+ from django.shortcuts import render, redirect, get_object_or_404
+ from django.views.generic import View
+-from django.http import HttpResponseRedirect, HttpResponseForbidden, HttpResponseNotFound
++from django.http import HttpResponseRedirect, HttpResponseForbidden, HttpResponseNotFound, FileResponse
+ from django.urls import reverse
+ from django.contrib import messages
+ from django.http import HttpResponse
+@@ -1311,4 +1311,27 @@ def set_team_id(request=None):
+             return HttpResponse(json.dumps(team_id), content_type="application/text")
+         return HttpResponse(json.dumps([]), content_type="application/text")
+     except Exception as e:
+-        logger.error(f'Ошибка при установке teamid')
+\ No newline at end of file
++        logger.error(f'Ошибка при установке teamid')
++
++def makeAndDownloadMdAndDocx(request, acl_id):
++    file_path = None
++    gitlab_filename = request.session['LOCAL_STORAGE']['acl_create_info.html'][9]
++
++    file_type = request.GET.get('file_type') or None
++
++    try:
++        if file_type:
++            if file_type == 'docx':
++                acl_project = request.session['LOCAL_STORAGE']['acl_create_info.html'][4]
++                gitlab_repo_url = ACLGitlabStore.objects.get(project=acl_project).gitlab_url
++                file_path = make_doc(request, request.session['LOCAL_STORAGE'], gitlab_repo_url=gitlab_repo_url, gitlab_filename=gitlab_filename)
++            elif file_type == 'md':
++                filename_without_extension = os.path.splitext(gitlab_filename)[0]
++                file_path = MakeMarkDown(request, request.session['LOCAL_STORAGE'], filename_without_extension, acl_id) or None
++            if file_path:
++                file_name = os.path.basename(file_path)
++                return FileResponse(open(f'static/{file_type}/{file_name}', 'rb'))
++
++    except Exception as e:
++        logger.error(f'[MAKE FILE] Не удалось сформировать файл:Ошибка:{e};file_type:{file_type}')
++        AclOver()
+\ No newline at end of file
+
+

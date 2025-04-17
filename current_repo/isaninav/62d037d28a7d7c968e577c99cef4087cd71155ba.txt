@@ -1,0 +1,98 @@
+==== File: accesslist/views.py ====
+@@ -1348,7 +1348,7 @@ def sync_gitlab_projects(request=None):
+         for gitlab_project in gitlab_project_list:
+             project_obj, created = ACLGitlabStore.objects.get_or_create(gitlab_url=gitlab_project['http_url_to_repo'])
+             if created:
+-                project_obj.project = f'{gitlab_project["block_name"]}/{gitlab_project["subgroup_name"]}/{gitlab_project["project_name"]}'
++                project_obj.project = gitlab_project["full_path"]
+                 project_obj.gitlab_url = gitlab_project['http_url_to_repo']
+                 project_obj.save()
+ 
+
+
+==== File: ownerlist/utils.py ====
+@@ -1265,6 +1265,7 @@ def MakeMarkDown(request, json_data, filename, fileuuid=''):
+ 
+ class GitWorker:
+     def __init__(self, request, GITPRO: None, USERNAME: None, PASSWORD: None,  PATH_OF_GIT_REPO, MDFILE: None, taskid=''):
++        os.environ['GIT_TIMEOUT'] = '60'
+         uid = str(uuid.uuid4())
+         if PATH_OF_GIT_REPO is not None:
+             try:
+@@ -1357,7 +1358,7 @@ class GitWorker:
+                 UpdateCallBackStatus(self.request, self.taskid, 'git_upload_status', "Нет доступа к GIT репозиторию", 0)
+             else:
+                 #self.request.session['git_upload_status'].append({'error': "[Ошибка] {}".format(e)})
+-                UpdateCallBackStatus(self.request, self.taskid, 'git_upload_status', "Ошибка при клонировании резозитория", 0)
++                UpdateCallBackStatus(self.request, self.taskid, 'git_upload_status', "Ошибка при клонировании репозитория", 0)
+             if settings.DEBUG:
+                 logger.debug('Ошибка при копировании')
+             return 0
+@@ -2158,40 +2159,41 @@ def check_taskId_by_uuid(uuid, proxy=None):
+     return str(result)
+ 
+ def sync_acl_portal_projects_list(group_name : str = "ACL"):
+-    block_list = []
+-    subgroup_list = []
+     project_list = []
+     session = requests.Session()
+     session.headers.update({'PRIVATE-TOKEN': settings.GIT_ACCESS_TOKEN})
++
++    def get_subgroup_projects(group_id, path=""):
++        try:
++            url_get_projects = f"https://gitlab.alfastrah.ru/api/v4/groups/{group_id}/projects"
++            response = session.get(url_get_projects)
++            if response.status_code == 200:
++                for project in response.json():
++                    full_path = f"{path}/{project['name']}".lstrip("/")
++                    project_list.append({'full_path': full_path, 'http_url_to_repo': project['http_url_to_repo']})
++        except Exception as e:
++            logger.error(f"Ошибка при получении проектов из подгруппы: {e}")
++
++        try:
++            url_get_subgroups = f'https://gitlab.alfastrah.ru/api/v4/groups/{group_id}/subgroups'
++            response = session.get(url_get_subgroups)
++            if response.status_code == 200:
++                for subgroup in response.json():
++                    subgroup_path = f"{path}/{subgroup['name']}".lstrip("/")
++                    get_subgroup_projects(subgroup["id"], path=subgroup_path)
++        except Exception as e:
++            logger.error(f"Ошибка при получении подгрупп из подгруппы: {e}")
++
+     try:
+         url_get_subgroups = f'https://gitlab.alfastrah.ru/api/v4/groups/{group_name}/subgroups'
+         response = session.get(url_get_subgroups)
+         if response.status_code == 200:
+             for block in response.json():
+-                block_list.append({"id":block["id"], "name":block["name"]})
++                block_path = f"{group_name}/{block['name']}".lstrip("/")
++                get_subgroup_projects(block["id"], path=block_path)
+     except Exception as e:
+         logger.error(f"Ошибка при получении блоков: {e}")
+-
+-    try:
+-        for block in block_list:
+-            url_get_projects = f"https://gitlab.alfastrah.ru/api/v4/groups/{block['id']}/subgroups"
+-            response = session.get(url_get_projects)
+-            if response.status_code == 200:
+-                for subgroup in response.json():
+-                    subgroup_list.append({"block_name":block['name'], "id":subgroup["id"], "name":subgroup["name"]})
+-    except Exception as e:
+-        logger.error(f"Ошибка при получении подгрупп: {e}")
+-    try:
+-        for subgroup in subgroup_list:
+-            url_get_projects = f"https://gitlab.alfastrah.ru/api/v4/groups/{subgroup['id']}/projects"
+-            response = session.get(url_get_projects)
+-            if response.status_code == 200:
+-                for project in response.json():
+-                    project_list.append({'block_name':subgroup['block_name'], 'subgroup_name':subgroup['name'], 'project_name': project['name'], 'http_url_to_repo': project['http_url_to_repo']})
+-    except Exception as e:
+-        logger.error(f"Ошибка при получении проектов: {e}")
+-    finally:
+-        return project_list
++    return project_list
+ 
+ def get_project_desc_from_git(session=None, project_id=''):
+     project_desc = ''
+
+

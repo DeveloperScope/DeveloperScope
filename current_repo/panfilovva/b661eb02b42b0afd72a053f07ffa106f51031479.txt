@@ -1,0 +1,294 @@
+==== File: accesslist/urls.py ====
+@@ -194,9 +194,8 @@ urlpatterns = [
+         name="get_project_filter",
+     ),
+     path("set_teamid/", set_team_id, name="set_team_id"),
+-    # path("overviewstatus/", OverViewStatus, name="aclcheck_status_urls"),
+     path("act/<str:acl_id>/<str:job>/<str:do>/", act),
+     path("task/<str:acl_id>/", task, name="aclcheck_status_urls"),
+-    path("task/<str:acl_id>/status", TaskStatus, name="aclcheck_status_urls"),
++    path("task/<str:acl_id>/status", TaskStatus, name="aclcheck_task_status_urls"),
+     re_path("$^", ACldefault, name="acldefault_urls"),
+ ]
+
+
+==== File: accesslist/views.py ====
+@@ -1178,83 +1178,58 @@ def check_taskid_and_status(request, *args, **kwargs):
+                                 project=acl_object.project
+                             ).gitlab_url
+                             local_storage = json.loads(acl_object.acltext)
+-
+-                            gitpush_successful = send_acl_to_git(request, acl_object)
+-
+                             doc_result = make_doc(
+                                 request,
+                                 data_set=local_storage,
+                                 fileuuid=acl_object.id,
+                                 gitlab_repo_url=gitlab_repo_url,
+-                                gitlab_filename=acl_object.git_filename,
++                                gitlab_filename=acl_object.git_filename
+                             )
++                            if settings.OMNITRACKER_URL:
++                                try:
++                                    docx_url = f"{request.get_host()}/{doc_result[1:]}"
++                                    logger.debug('URL ОТПРАВКИ В OMNI ' + str(docx_url))
+ 
++                                    if '://' not in docx_url:
++                                        docx_url = 'https://' + docx_url
++
++                                except Exception as e:
++                                    docx_url = ''
++                                    logger.error(f'Ошибка при создании ссылки на docx: {e}')
++                                result_id = send_onmitracker(sender=acl_object.owner.email,
++                                                             title=f'SH0458 Запрос на предоставление доступа согласован : {str(acl_object.approve.first().get_full_name())}',
++                                                             text=f'Прошу предоставить сетевой доступ, согласно ACL. Согласование владельца ресурса во вложении. Ссылка на ACL :https://acl.vesta.ru/acl/info/{str(acl_object.id)}',
++                                                             attach=docx_url,
++                                                             fake=False,
++                                                             request=request,
++                                                             uid=acl_object.id
++                                                             )
++                                result_id = int(result_id) or 0
++                                if result_id == 0:
++                                    send_to_mattermost(
++                                        f"[acl_pusher] Мы не смогли создать обращение через OmniTracker")
++                                    raise Exception('[acl_pusher] Мы не смогли создать обращение через OmniTracker')
++                                else:
++                                    if acl_object:
++                                        acl_object.taskid = str(result_id)
++                                        acl_object.save(update_fields=['taskid'])
++                                        success_send_omni_count += 1
++                                        send_to_mattermost(
++                                            f'[acl_pusher][owner={acl_object.owner}, Ссылка на ACL: https://acl.vesta.ru/acl/info/{str(acl_object.id)}] Получен номер SD("{result_id}"). Добавление и проверка записи на портале={acl_object.taskid}')
++                            if 'ACT_MAKE_GIT' in request.session: del request.session['ACT_MAKE_GIT']
++                            if 'ACT_OMNI' in request.session: del request.session['ACT_OMNI']
++                        except Exception as e:
++                            send_to_mattermost(f"[acl_pusher] Произошла ошибка при формировании заявки: {e}")
++                            logger.error(f'[acl_pusher] Произошла ошибка при формировании заявки: {e}')
++                            unsuccessful_count += 1
++
++                        try:
++                            gitpush_successful = send_acl_to_git(request, acl_object)
+                             if not gitpush_successful:
+                                 unsuccessful_git_push_acl.append(
+                                     f"https://acl.vesta.ru/acl/info/{str(acl_object.id)}"
+                                 )
+                                 unsuccessful_send_git_count += 1
+-                                try:  # Отправка в Омнитрекер
+-                                    if settings.OMNITRACKER_URL:
+-                                        logger.info(
+-                                            f"[LOCAL DEBUG] gitpush_successful:{gitpush_successful}. Начинаю отправку в омни."
+-                                        )
+-                                        try:
+-                                            docx_url = (
+-                                                f"{request.get_host()}/{doc_result[1:]}"
+-                                            )
+-                                            logger.debug(
+-                                                "URL ОТПРАВКИ В OMNI " + str(docx_url)
+-                                            )
+-
+-                                            if "://" not in docx_url:
+-                                                docx_url = "https://" + docx_url
+-
+-                                        except Exception as e:
+-                                            docx_url = ""
+-                                            logger.error(
+-                                                f"Ошибка при создании ссылки на docx: {e}"
+-                                            )
+-                                        result_id = send_onmitracker(
+-                                            sender=acl_object.owner.email,
+-                                            title=f"SH0458 Запрос на предоставление доступа согласован : {str(acl_object.approve.first().get_full_name())}",
+-                                            text=f"Прошу предоставить сетевой доступ, согласно ACL. Согласование владельца ресурса во вложении. Ссылка на ACL :https://acl.vesta.ru/acl/info/{str(acl_object.id)}",
+-                                            attach=docx_url,
+-                                            fake=False,
+-                                            request=request,
+-                                            uid=acl_object.id,
+-                                        )
+-                                        result_id = int(result_id) or 0
+-                                        if result_id == 0:
+-                                            send_to_mattermost(
+-                                                "[acl_pusher] Мы не смогли создать обращение через OmniTracker"
+-                                            )
+-                                            raise Exception(
+-                                                "[acl_pusher] Мы не смогли создать обращение через OmniTracker"
+-                                            )
+-                                        else:
+-                                            if acl_object:
+-                                                acl_object.taskid = str(result_id)
+-                                                acl_object.save(
+-                                                    update_fields=["taskid"]
+-                                                )
+-                                                success_send_omni_count += 1
+-                                                send_to_mattermost(
+-                                                    f'[acl_pusher][owner={acl_object.owner}, Ссылка на ACL: https://acl.vesta.ru/acl/info/{str(acl_object.id)}] Получен номер SD("{result_id}"). Добавление и проверка записи на портале={acl_object.taskid}'
+-                                                )
+-                                    if "ACT_MAKE_GIT" in request.session:
+-                                        del request.session["ACT_MAKE_GIT"]
+-                                    if "ACT_OMNI" in request.session:
+-                                        del request.session["ACT_OMNI"]
+-                                except Exception as e:
+-                                    send_to_mattermost(
+-                                        f"[acl_pusher] Произошла ошибка при формировании заявки: {e}"
+-                                    )
+-                                    logger.error(
+-                                        f"[acl_pusher] Произошла ошибка при формировании заявки: {e}"
+-                                    )
+-                                    unsuccessful_count += 1
+-
+                         except Exception as e:
+                             send_to_mattermost(
+                                 f"[acl_pusher] Ошибка при создании docx:{e}; Ссылка на ACL :https://acl.vesta.ru/acl/info/{str(acl_object.id)}"
+@@ -2147,4 +2122,4 @@ class APIACLInfoView(APIView):
+                 "result": result,
+             }
+         ).data
+-        return Response(data=response, status=status.HTTP_200_OK)
++        return Response(data=response, status=status.HTTP_200_OK)
+\ No newline at end of file
+
+
+==== File: ownerlist/utils.py ====
+@@ -36,7 +36,7 @@ from django.shortcuts import reverse
+ from django.views import View
+ from docx import Document, opc
+ from docx.enum.text import WD_COLOR_INDEX
+-from docx.shared import Pt
++from docx.shared import Pt, RGBColor
+ 
+ try:
+     from requests_ntlm import HttpNtlmAuth
+@@ -1116,11 +1116,15 @@ def make_doc(
+ 
+     def normalize_whitespace(data_set):
+         for data_idx, data in enumerate(data_set):
++            if data == 'acl_traffic.html':
++                for row_idx, row in enumerate(data_set[data]):
++                    if len(row) == 7:
++                        data_set[data][row_idx].append(" ")
+             try:
+                 if data_idx == 0:
+                     continue
+-                for row_idx, row_value in enumerate(data_set[data]):
+-                    for cell_idx, cell_value in enumerate(row_value):
++                for row_idx, row in enumerate(data_set[data]):
++                    for cell_idx, cell_value in enumerate(row):
+                         if all(ch.isspace() for ch in cell_value):
+                             data_set[data][row_idx][cell_idx] = " "
+                         else:
+@@ -1144,6 +1148,7 @@ def make_doc(
+         data_set = normalize_whitespace(data_set)
+         gitlab_data_set = normalize_whitespace(gitlab_data_set)
+     else:
++        print('Не удалось получить gitlab_data_set')
+         gitlab_data_set = data_set
+ 
+     is_in_session = "ACT_MAKE_DOCX" in request.session
+@@ -1179,6 +1184,7 @@ def make_doc(
+     except Exception as e:
+         APP_FILE = "static/docx/ACL_" + fileuuid + ".docx"
+         logger.error(f"Не удалось добавить gitlab_filename в название файла docx:{e}")
++        print(f"Не удалось добавить gitlab_filename в название файла docx:{e}")
+ 
+     doc = Document(TEMPLATE_FILE)
+     if is_in_session:
+@@ -1215,24 +1221,20 @@ def make_doc(
+                     if str(row_data) not in gitlab_data_set.get(data, []):
+                         for paragraph in table_tmp.cell(row_idx, 1).paragraphs:
+                             for run in paragraph.runs:
+-                                run.font.highlight_color = WD_COLOR_INDEX.YELLOW
++                                run.font.highlight_color = WD_COLOR_INDEX.GREEN
++                                run.font.color.rgb = RGBColor(255, 255, 255)
+                         try:
+-                            strike_paragraph = table_tmp.cell(
+-                                row_idx, 1
+-                            ).add_paragraph()
+-                            run_strike = strike_paragraph.add_run(
+-                                str(gitlab_data_set.get(data, [])[row_idx])
+-                            )
++                            strike_paragraph = table_tmp.cell(row_idx, 1).add_paragraph()
++                            run_strike = strike_paragraph.add_run(str(gitlab_data_set.get(data, [])[row_idx]))
+                             run_strike.font.strike = True
+                             run_strike.font.highlight_color = WD_COLOR_INDEX.RED
++                            run_strike.font.color.rgb = RGBColor(255, 255, 255)
+                         except:
+                             notFoundCount += 1
+                 except Exception as e:
+                     logger.error(e)
+             if notFoundCount > 0:
+-                logger.info(
+-                    f"Не удалось найти {notFoundCount} строк(и) страницы Контакты в gitlab"
+-                )
++                logger.info(f"Не удалось найти {notFoundCount} строк(и) страницы Контакты в gitlab")
+         else:
+             row_cnt = 0
+             if data not in data_set:
+@@ -1246,9 +1248,8 @@ def make_doc(
+                                     cell = table_tmp.cell(key, cell_idx)
+                                     cell.text = str(cell_val)
+                                     cell.paragraphs[0].runs[0].font.strike = True
+-                                    cell.paragraphs[0].runs[
+-                                        0
+-                                    ].font.highlight_color = WD_COLOR_INDEX.RED
++                                    cell.paragraphs[0].runs[0].font.highlight_color = WD_COLOR_INDEX.RED
++                                    cell.paragraphs[0].runs[0].font.color.rgb = RGBColor(255, 255, 255)
+                         except Exception as e:
+                             logger.error(f"[restore from gitlab data set error ] {e}")
+                 continue
+@@ -1267,9 +1268,8 @@ def make_doc(
+                             for cell_idx, cell_val in enumerate(value):
+                                 try:
+                                     cell = table_tmp.cell(key, cell_idx)
+-                                    cell.paragraphs[0].runs[
+-                                        0
+-                                    ].font.highlight_color = WD_COLOR_INDEX.YELLOW
++                                    cell.paragraphs[0].runs[0].font.highlight_color = WD_COLOR_INDEX.GREEN
++                                    cell.paragraphs[0].runs[0].font.color.rgb = RGBColor(255, 255, 255)
+                                 except Exception as e:
+                                     logger.error(e)
+                         else:
+@@ -1277,9 +1277,8 @@ def make_doc(
+                                 for cell_idx, cell_val in enumerate(value):
+                                     try:
+                                         cell = table_tmp.cell(key, cell_idx)
+-                                        cell.paragraphs[0].runs[
+-                                            0
+-                                        ].font.highlight_color = WD_COLOR_INDEX.YELLOW
++                                        cell.paragraphs[0].runs[0].font.highlight_color = WD_COLOR_INDEX.GREEN
++                                        cell.paragraphs[0].runs[0].font.color.rgb = RGBColor(255, 255, 255)
+                                     except Exception as e:
+                                         logger.error(e)
+                     row_cnt += 1
+@@ -1292,19 +1291,23 @@ def make_doc(
+             row_cnt = 0
+             for row_idx, row_val in enumerate(gitlab_data_set[data], start=1):
+                 try:
+-                    if row_cnt >= table_rows:
+-                        table_tmp.add_row()
+                     if row_val not in data_set[data]:
+-                        if len(row_val) <= table_cols:
++                        logger.info(f'На портале отсутствует строка: {row_val}')
++                        if len(row_val) <= table_cols and any(cell_val for cell_val in row_val):  # check if row is not empty
++                            new_row = table_tmp.add_row()  # add a new row
+                             for cell_idx, cell_val in enumerate(row_val):
+-                                cell = table_tmp.cell(row_idx, cell_idx)
+-                                new_paragraph = cell.add_paragraph()
+-                                run = new_paragraph.add_run(str(cell_val))
+-                                run.font.highlight_color = WD_COLOR_INDEX.RED
+-                                run.font.strike = True
+-                    row_cnt += 1
++                                cell = new_row.cells[cell_idx]  # get the cell in the new row
++                                cell.text = str(cell_val)  # set the cell text
++                                cell.paragraphs[0].runs[0].font.highlight_color = WD_COLOR_INDEX.RED
++                                cell.paragraphs[0].runs[0].font.color.rgb = RGBColor(255, 255, 255)
++                                cell.paragraphs[0].runs[0].font.strike = True
+                 except Exception as e:
+                     logger.error(e)
++        # Очистка пустых строк
++        for row in table_tmp.rows:
++            if all(cell.text.strip() == '' for cell in row.cells):
++                table_tmp._tbl.remove(row._tr)
++
+     if "taskid" in request.session:
+         if request.session["taskid"] != "":
+             p = doc.add_paragraph(request.session["taskid"])
+
+

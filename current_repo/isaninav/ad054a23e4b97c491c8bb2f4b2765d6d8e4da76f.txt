@@ -1,0 +1,48 @@
+==== File: accesslist/templates/acl_base.html ====
+@@ -32,15 +32,17 @@
+         {% endif %}
+ 
+           <li class="descr-item">
+-             {% if '/acl/overview/' in request.path %}
+-                <a class="descr-link--active not-active" href="{{ request.path }}">Формирование Обращения</a>
+-             {% else %}
+-                 {% if status == 'WTE' %}
+-                    <a class="descr-link--active not-active" onclick="return false;" style="display: none">Формирование Обращения</a>
++              {% if status != 'JOB' and status != 'CMP' and status != 'FLY' %}
++                 {% if '/acl/overview/' in request.path%}
++                    <a class="descr-link--active not-active" href="{{ request.path }}">Формирование Обращения</a>
+                  {% else %}
+-                     <a class="descr-link not-active" href="{% url 'acloverview_urls' %}{{acl_id}}/">Формирование Обращения</a>
++                     {% if status == 'WTE' %}
++                        <a class="descr-link--active not-active" onclick="return false;" style="display: none">Формирование Обращения</a>
++                     {% else %}
++                         <a class="descr-link not-active" href="{% url 'acloverview_urls' %}{{acl_id}}/">Формирование Обращения</a>
++                     {% endif %}
+                  {% endif %}
+-             {% endif %}
++              {% endif %}
+           </li>
+ 
+         </ul>
+
+
+==== File: accesslist/templates/acl_overview.html ====
+@@ -4,7 +4,6 @@
+  <div class="col-2 d-none d-md-block d-lg-block" style="min-width: 270px;">
+             <img class="img-fluid" src="{% static 'img/network.png' %}" style="height: 450px">
+             {% if taskid%}
+-                <p> taskid: {{ taskid }}</p>
+                 <script>console.log('taskid is exist');</script>
+             {% else %}
+                 <p> taskid is none</p>
+@@ -101,7 +100,6 @@
+             setErrorStatus('Запрос прервался по таймауту (более 20 сек), попробуйте еще раз', int_status);
+         }
+     }, {{ JS_TIMEOUT }});
+-    {% endif %}
+ 
+ </script>
+ {% endblock %}
+\ No newline at end of file
+
+

@@ -1,0 +1,9 @@
+==== File: manage.py ====
+@@ -1,4 +1,5 @@
+ #!/usr/bin/env python
++# dummy line to move it to production
+ """Django's command-line utility for administrative tasks."""
+ import os
+ import sys
+
+

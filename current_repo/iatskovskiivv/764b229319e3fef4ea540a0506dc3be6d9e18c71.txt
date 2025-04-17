@@ -1,0 +1,160 @@
+==== File: accesslist/templates/acl_create_info.html ====
+@@ -614,6 +614,29 @@
+         });
+     });
+ </script>
++<script>
++<!--  Update projects from gitlab  -->
++    $('#gitlab_proj_upload_dropdown').on('click', function() {
++        var csrfToken = $('input[name="csrfmiddlewaretoken"]').val();
++        $.ajax({
++            url: '/acl/git_update_projects/',
++            type: 'GET',
++            headers: {'X-CSRFToken': csrfToken},
++            success: function(data) {
++                project_list = JSON.parse(data);
++                $.each(project_list, function(index, value){
++                    var newOption = new Option(value.project, value.project);
++                    $(newOption).attr('data-gitlab-url', value.gitlab_url);
++                    $('#gitlab_proj_upload_dropdown').append(newOption);
++                });
++            },
++            error: function(xhr, status, error) {
++                ShowNotify(0, 'Ошибка при синхронизации проектов');
++            }
++        });
++    });
++</script>
++
+ <script>
+     if(localStorage.getItem('uploaded_filename_docx') !== null){
+         if(localStorage.getItem('uploaded_project_name_docx') !== null){
+
+
+==== File: accesslist/urls.py ====
+@@ -71,6 +71,7 @@ urlpatterns = [
+     path("template/", UploadTemplate, name="acl_template_urls"),
+     path("git_upload_template/", upload_acl_from_git, name="gitlab_upload_acl"),
+     path("git_get_files/", get_gitlab_files, name="git_get_files"),
++    path("git_update_projects/", sync_gitlab_projects, name="git_projects_sync"),
+     #path("overviewstatus/", OverViewStatus, name="aclcheck_status_urls"),
+     path("act/<str:acl_id>/<str:job>/<str:do>/", act),
+     path("task/<str:acl_id>/", task, name="aclcheck_status_urls"),
+
+
+==== File: accesslist/views.py ====
+@@ -1,5 +1,6 @@
+ import urllib
+ 
++from django.forms import model_to_dict
+ from django.shortcuts import render, redirect, get_object_or_404
+ from django.views.generic import View
+ from django.http import HttpResponseRedirect, HttpResponseForbidden, HttpResponseNotFound
+@@ -16,6 +17,7 @@ from ownerlist.utils import FORM_APPLICATION_KEYS, FORM_URLS, BaseView, GitWorke
+ from ownerlist.utils import send_onmitracker, send_to_mattermost
+ from ownerlist.utils import get_files_from_gitlab, convert_md_to_dict, get_acl_from_gitlab
+ from ownerlist.utils import acl_sending_retry_checking
++from ownerlist.utils import sync_acl_portal_projects_list
+ import json
+ import uuid
+ from django.views.decorators.csrf import csrf_exempt
+@@ -1243,3 +1245,20 @@ def MakeBackgroundTask(*args,**kwargs):
+     request = kwargs.get("request")
+     acl_id = kwargs.get("acl_id")
+     task(request, acl_id)
++
++def sync_gitlab_projects(request=None):
++    try:
++        new_projects_list = []
++        gitlab_project_list = sync_acl_portal_projects_list()
++        for gitlab_project in gitlab_project_list:
++            project_obj, created = ACLGitlabStore.objects.get_or_create(gitlab_url=gitlab_project['http_url_to_repo'])
++            if created:
++                project_obj.project = f'{gitlab_project["subgroup_name"]}/{gitlab_project["project_name"]}'
++                project_obj.gitlab_url = gitlab_project['http_url_to_repo']
++                project_obj.save()
++
++                new_projects_list.append(model_to_dict(project_obj))
++        return HttpResponse(json.dumps(new_projects_list), content_type="application/text")
++    except Exception as e:
++        logger.error(f"[Ошибка при Обновлении списка проектов] {e}")
++        return HttpResponse(json.dumps([]), content_type="application/text")
+\ No newline at end of file
+
+
+==== File: acladmin/settings.py ====
+@@ -245,6 +245,8 @@ EMAIL_PORT =os.environ['EMAIL_PORT']
+ EMAIL_HOST_USER = os.environ['EMAIL_HOST_USER']
+ EMAIL_HOST_PASSWORD = os.environ['EMAIL_HOST_PASSWORD']
+ 
++GIT_ACCESS_TOKEN = os.environ['GIT_ACCESS_TOKEN']
++
+ MATTERMOST_WEBHOOK_URL = 'https://mattermost.alfastrah.ru/hooks/naht8rbp4fdwpf43pbsyatanka'
+ 
+ OMNITRACKER_URL = "http://ot10.vesta.ru/otws/v1.asmx"
+
+
+==== File: ownerlist/utils.py ====
+@@ -1951,11 +1951,11 @@ def get_gitlab_project_info(session, repo_url: str):
+     except Exception as e:
+         logger.error(f"Ошибка при получении информации gitlab: {e}")
+ 
+-def get_files_from_gitlab(repo_url: str, branch_name: str = 'develop', access_token:str = 'RkKgtYqfifwN4kp11n-s'):
++def get_files_from_gitlab(repo_url: str, branch_name: str = 'develop'):
+     file_list = []
+     try:
+         session = requests.Session()
+-        session.headers.update({'PRIVATE-TOKEN': access_token})
++        session.headers.update({'PRIVATE-TOKEN': settings.GIT_ACCESS_TOKEN})
+         project_id = get_gitlab_project_info(session, repo_url)['project_id']
+         base_api_url = f"https://gitlab.alfastrah.ru/api/v4/projects"
+         get_file_list_api = f"{base_api_url}/{project_id}/repository/tree?ref={branch_name}"
+@@ -1967,11 +1967,11 @@ def get_files_from_gitlab(repo_url: str, branch_name: str = 'develop', access_to
+     finally:
+         return file_list
+ 
+-def get_acl_from_gitlab(repo_url: str, branch_name: str = 'develop', file_name:str = '', access_token: str = 'RkKgtYqfifwN4kp11n-s'):
++def get_acl_from_gitlab(repo_url: str, branch_name: str = 'develop', file_name:str = ''):
+     """Получает acl в формате str из gitlab"""
+     try:
+         session = requests.Session()
+-        session.headers.update({'PRIVATE-TOKEN': access_token})
++        session.headers.update({'PRIVATE-TOKEN': settings.GIT_ACCESS_TOKEN})
+         project_id = get_gitlab_project_info(session, repo_url)['project_id']
+         get_file_content_api = f"https://alfastrah.ru:@gitlab.alfastrah.ru/api/v4/projects/{project_id}/repository/files/{file_name}?ref={branch_name}"
+         response = session.get(get_file_content_api)
+@@ -2106,4 +2106,29 @@ def check_taskId_by_uuid(uuid, proxy=None):
+         result = int(result)
+     except:
+         result = ''
+-    return str(result)
+\ No newline at end of file
++    return str(result)
++
++def sync_acl_portal_projects_list(group_name : str = "ACL"):
++    subgroups_list = []
++    project_list = []
++    session = requests.Session()
++    session.headers.update({'PRIVATE-TOKEN': settings.GIT_ACCESS_TOKEN})
++    try:
++        url_get_subgroups = f'https://gitlab.alfastrah.ru/api/v4/groups/{group_name}/subgroups'
++        response = session.get(url_get_subgroups)
++        if response.status_code == 200:
++            for subgroup in response.json():
++                subgroups_list.append({"id":subgroup["id"], "name":subgroup["name"]})
++    except Exception as e:
++        logger.error(f"Ошибка при получении подгрупп: {e}")
++    try:
++        for subgroup in subgroups_list:
++            url_get_projects = f"https://gitlab.alfastrah.ru/api/v4/groups/{subgroup['id']}/projects"
++            response = session.get(url_get_projects)
++            if response.status_code == 200:
++                for project in response.json():
++                    project_list.append({'subgroup_name':subgroup['name'], 'project_name': project['name'], 'http_url_to_repo': project['http_url_to_repo']})
++    except Exception as e:
++        logger.error(f"Ошибка при получении проектов: {e}")
++    finally:
++        return project_list
+\ No newline at end of file
+
+

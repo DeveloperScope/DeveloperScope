@@ -1,0 +1,30 @@
+==== File: accesslist/templates/acl_create_info.html ====
+@@ -481,9 +481,11 @@
+     $(document).ready(function() {
+     $projectSelect = $("#gitlab_proj_upload_dropdown").select2({
+         placeholder: 'Выбрать проект',
+-        theme: false
++        theme: false,
++        dropdownCssClass: 'select2-dropdown-overflow'
+     });
+     $projectSelect.data("select2").$container.addClass("contact__input");
++
+ });
+ 
+ </script>
+
+
+==== File: static/css/style.css ====
+@@ -1133,4 +1133,9 @@ position: absolute;
+     border:solid 1px gray;
+     border-radius:0.25em;
+     box-shadow:0 0 2px 1px gray
++}
++
++.select2-dropdown-overflow {
++  overflow-y: auto;
++  max-height: 500px;
+ }
+\ No newline at end of file
+
+

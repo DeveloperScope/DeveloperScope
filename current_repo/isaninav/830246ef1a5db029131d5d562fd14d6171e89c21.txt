@@ -1,0 +1,16 @@
+==== File: ownerlist/utils.py ====
+@@ -1269,10 +1269,10 @@ def MakeMarkDown(request, json_data, filename, fileuuid=''):
+ 
+ 
+ class GitWorker:
+-    def __init__(self, request, GITPRO=None, USERNAME="aclportal", PASSWORD=None,  PATH_OF_GIT_REPO=None, MDFILE='', taskid=''):
++    def __init__(self, request, GITPRO=None, USERNAME=None, PASSWORD=None,  PATH_OF_GIT_REPO=None, MDFILE='', taskid=''):
+         os.environ['GIT_TIMEOUT'] = '60'
+         uid = str(uuid.uuid4())
+-        self.USERNAME = USERNAME
++        self.USERNAME = settings.GITLAB_AUTH_USERNAME
+         self.gitlab_token = settings.GIT_ACCESS_TOKEN
+         if PATH_OF_GIT_REPO is not None:
+             try:
+
+

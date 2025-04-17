@@ -1,0 +1,381 @@
+==== File: accesslist/views.py ====
+@@ -1,5 +1,4 @@
+-import urllib
+-
++import requests
+ from django.forms import model_to_dict
+ from django.shortcuts import render, redirect, get_object_or_404
+ from django.views.generic import View
+@@ -11,7 +10,7 @@ from .models import ACL, ACLGitlabStore
+ from ownerlist.models import Owners, Iplist
+ import os
+ from ownerlist.utils import make_doc, MakeMarkDown, request_handler, is_valid_uuid, ip_status, logger, get_client_ip, \
+-    MakeTemporaryToken, ParseDocx
++    MakeTemporaryToken, ParseDocx, get_gitlab_project_info
+ from ownerlist.utils import FORM_APPLICATION_KEYS, FORM_URLS, BaseView, GitWorker, BASE_DIR, UpdateCallBackStatus, \
+     ClearSessionMeta, upload_file_handler, omni_check_status, SendMessageToApprove
+ from ownerlist.utils import send_onmitracker, send_to_mattermost
+@@ -27,13 +26,12 @@ from django.contrib.auth.mixins import LoginRequiredMixin
+ from django.core.cache import cache
+ import re
+ import sys
+-from django.contrib.auth.models import User, Group
++from django.contrib.auth.models import User
+ from .forms import Approve_form
+ from django.db.models import Q
+-from django.core.mail import EmailMessage, send_mail
++from django.core.mail import EmailMessage
+ from django.contrib.messages import get_messages
+ from teams.models import Block, Team
+-from datetime import datetime
+ from inspect import stack
+ from time import sleep
+ from django.db import transaction
+@@ -774,27 +772,33 @@ def upload_acl_from_git(request):
+         gitlab_project = request.POST.get('project')
+         gitlab_repo_url = ACLGitlabStore.objects.get(project=gitlab_project).gitlab_url
+         gitlab_file_name = request.POST.get('gitlab_file_selected_option')
+-
+-        if not re.match('^(https:\/\/git)?(.)+(.git)$', gitlab_repo_url):
+-            result = {'error': 'Ошибка: Невалидный gitlab url.'}
+-
+-        git_password = urllib.parse.quote_plus(request.session["GIT_PASSWORD"])
+-        gitlab_repo_url = gitlab_repo_url.replace("https://", "")
+-        gitlab_repo_url = f'https://{request.session["GIT_USERNAME"]}%40alfastrah.ru:{git_password}@{gitlab_repo_url}'
+-        try:
+-            g = GitWorker(request, gitlab_repo_url, request.session['GIT_USERNAME'],
+-                          request.session['GIT_PASSWORD'], None, '')
+-            if g:
+-                g.repo.git.ls_remote('--heads', '--tags', gitlab_repo_url)
+-                g.free()
+-        except IndexError as e:
+-            logger.error(f'IndexError: {e}')
+-        except Exception as e:
+-            if e.status == 128:
+-                logger.error(f'Ошибка авторизации: e.status == 128: HTTP Basic: Access denied')
+-                return HttpResponse(json.dumps({'error': f"Ошибка: У пользователя {request.session['GIT_USERNAME']} нет доступа"}), content_type="application/json")
++        # Проверка прав пользователя
++        session = requests.Session()
++        session.headers.update({'PRIVATE-TOKEN': settings.GIT_ACCESS_TOKEN})
++        project_id = get_gitlab_project_info(session, repo_url=gitlab_repo_url, mode='id')
++        get_members_api = f'https://gitlab.alfastrah.ru/api/v4/projects/{project_id}/members/all'
++        #
++        response = session.get(get_members_api)
++
++        if response.status_code == 200:
++            project_members_list_full = response.json()
++            project_members_list = []
++            for member in project_members_list_full:
++                project_members_list.append(member['username'].lower())
++            current_username = request.session['GIT_USERNAME']
++
++            if current_username.lower() in project_members_list:
++                logger.info(f'Пользователь {current_username} есть в списке участников: {project_members_list}. Начинаю загрузку md на портал')
++                g = GitWorker(request, gitlab_repo_url, PATH_OF_GIT_REPO=None, MDFILE='', taskid='')
++                if g:
++                    g.repo.git.ls_remote('--heads', '--tags', gitlab_repo_url)
++                    g.free()
+             else:
+-                logger.info(f"[ПРОВЕРКА АВТОРИЗАЦИИ] Ошибка: {e}")
++                logger.info(f'Пользователь {current_username} не найден среди участников проекта: {project_members_list}. Отображено сообщение: нет доступа')
++                return HttpResponse(json.dumps({'error': f"Ошибка: У пользователя {current_username} нет доступа"}), content_type="application/json")
++        else:
++            logger.info(f" Ошибка во время проверки прав:{response}")
++            return HttpResponse(json.dumps({'error': f"Ошибка: Во время проверки прав"}), content_type="application/json")
+ 
+         md_content, project_desc = get_acl_from_gitlab(repo_url=gitlab_repo_url, branch_name='develop', file_name=gitlab_file_name)
+         if md_content is not None:
+@@ -839,8 +843,51 @@ def check_taskid_and_status(request, *args, **kwargs):
+                                 gitlab_project = aclObject.project
+                                 gitlab_repo_url = ACLGitlabStore.objects.get(project=gitlab_project).gitlab_url
+                                 doc_result = make_doc(request, json.loads(aclObject.acltext), acl_id, gitlab_repo_url=gitlab_repo_url, gitlab_filename=gitlab_filename)
+-                                try:
+-                                    if settings.OMNITRACKER_URL:
++                                gitpush_successful = False
++                                try: # Отправка в Гитлаб
++                                    file_md = MakeMarkDown(request, json.loads(aclObject.acltext),
++                                                           'acl_{}'.format(acl_id), acl_id) or 'None'
++                                    if not file_md:
++                                        send_to_mattermost(
++                                            '[acl_pusher] Ошибка: функция создания md отработала, но файл не сформирован.')
++                                        raise Exception(
++                                            '[acl_pusher] Ошибка: функция создания md отработала, но файл не сформирован.')
++
++                                    file_md_abs = os.path.join(BASE_DIR, 'static/md/' + 'acl_{}'.format(
++                                        str(acl_id)) + '.md')
++                                    if '/' in file_md_abs:
++                                        if 'linux' not in sys.platform:
++                                            file_md_abs = file_md_abs.replace('/', '\\')
++                                    if not os.path.exists(file_md_abs):
++                                        file_md_abs = os.path.join(BASE_DIR, 'static/md/' + 'acl_{}'.format(
++                                            str(acl_id)) + '.md')
++                                    gitlab_project = aclObject.project
++                                    gitlab_filename = aclObject.git_filename
++                                    gitlab_repo_url = ACLGitlabStore.objects.get(
++                                        project=gitlab_project).gitlab_url
++                                    g = GitWorker(request, gitlab_repo_url, PATH_OF_GIT_REPO=None, MDFILE=file_md_abs,
++                                                  taskid=acl_id)
++                                    if g:
++                                        g.pull()
++                                        if g.clone():
++                                            g.repo.git.checkout('develop')
++                                            f = g.activity(gitlab_filename)
++                                            if f:
++                                                if g.addindex(f):
++                                                    if g.push(refspec='develop:develop'):
++                                                        logger.info(f'[acl_pusher] acl успешно отправлен в git')
++                                                        gitpush_successful = True
++                                        g.free()
++                                except Exception as e:
++                                    unsuccessful_git_push_acl.append(
++                                        f'https://acl.vesta.ru/acl/info/{str(aclObject.id)}')
++                                    unsuccessful_send_git_count += 1
++                                    send_to_mattermost(f'[acl_pusher] Ошибка при отправке в git: {e}')
++                                    logger.error(f'[acl_pusher] Ошибка при отправке в git: {e}')
++
++                                try: # Отправка в Омнитрекер
++                                    if settings.OMNITRACKER_URL and gitpush_successful:
++                                        logger.info(f'[LOCAL DEBUG] gitpush_successful:{gitpush_successful}. Начинаю отправку в омни.')
+                                         try:
+                                             docx_url = f"{request.get_host()}/{doc_result[1:]}"
+                                             logger.debug('URL ОТПРАВКИ В OMNI ' + str(docx_url))
+@@ -859,56 +906,18 @@ def check_taskid_and_status(request, *args, **kwargs):
+                                                                      request=request,
+                                                                      uid=acl_id
+                                                                      )
+-                                    result_id = int(result_id) or 0
+-                                    if result_id == 0:
+-                                        send_to_mattermost(f"[acl_pusher] Мы не смогли создать обращение через OmniTracker")
+-                                        raise Exception('[acl_pusher] Мы не смогли создать обращение через OmniTracker')
+-                                    else:
+-                                        if aclObject:
+-                                            aclObject.taskid = str(result_id)
+-                                            aclObject.save(update_fields=['taskid'])
+-                                            success_send_omni_count += 1
+-                                            send_to_mattermost(f'[acl_pusher][owner={aclObject.owner}, Ссылка на ACL: https://acl.vesta.ru/acl/info/{str(aclObject.id)}] Получен номер SD("{result_id}"). Добавление и проверка записи на портале={aclObject.taskid}')
+-
+-                                            try:
+-                                                file_md = MakeMarkDown(request, json.loads(aclObject.acltext),
+-                                                                       'acl_{}'.format(acl_id), acl_id) or 'None'
+-                                                if not file_md:
+-                                                    send_to_mattermost('[acl_pusher] Ошибка: функция создания md отработала, но файл не сформирован.')
+-                                                    raise Exception('[acl_pusher] Ошибка: функция создания md отработала, но файл не сформирован.')
+-
+-                                                file_md_abs = os.path.join(BASE_DIR, 'static/md/' + 'acl_{}'.format(
+-                                                    str(acl_id)) + '.md')
+-                                                if '/' in file_md_abs:
+-                                                    if 'linux' not in sys.platform:
+-                                                        file_md_abs = file_md_abs.replace('/', '\\')
+-                                                if not os.path.exists(file_md_abs):
+-                                                    file_md_abs = os.path.join(BASE_DIR, 'static/md/' + 'acl_{}'.format(
+-                                                        str(acl_id)) + '.md')
+-                                                gitlab_project = aclObject.project
+-                                                gitlab_filename = aclObject.git_filename
+-                                                gitlab_repo_url = ACLGitlabStore.objects.get(
+-                                                    project=gitlab_project).gitlab_url
+-                                                g = GitWorker(request, gitlab_repo_url, settings.GITLAB_AUTH_USERNAME,
+-                                                              settings.GITLAB_AUTH_PASSWORD, None, file_md_abs,
+-                                                              taskid=acl_id)
+-                                                if g:
+-                                                    if g.clone():
+-                                                        g.repo.git.checkout('develop')
+-                                                        g.pull()
+-                                                        f = g.activity(gitlab_filename)
+-                                                        if f:
+-                                                            if g.addindex(f):
+-                                                                if g.push(refspec='develop:develop'):
+-                                                                    logger.info(f'[acl_pusher] acl успешно отправлен в git')
+-                                                    g.free()
+-                                            except Exception as e:
+-                                                unsuccessful_git_push_acl.append(f'https://acl.vesta.ru/acl/info/{str(aclObject.id)}')
+-                                                unsuccessful_send_git_count += 1
+-                                                send_to_mattermost(f'[acl_pusher] Ошибка при отправке в git: {e}')
+-                                                logger.error(f'[acl_pusher] Ошибка при отправке в git: {e}')
+-                                        if 'ACT_MAKE_GIT' in request.session: del request.session['ACT_MAKE_GIT']
+-                                        if 'ACT_OMNI' in request.session: del request.session['ACT_OMNI']
++                                        result_id = int(result_id) or 0
++                                        if result_id == 0:
++                                            send_to_mattermost(f"[acl_pusher] Мы не смогли создать обращение через OmniTracker")
++                                            raise Exception('[acl_pusher] Мы не смогли создать обращение через OmniTracker')
++                                        else:
++                                            if aclObject:
++                                                aclObject.taskid = str(result_id)
++                                                aclObject.save(update_fields=['taskid'])
++                                                success_send_omni_count += 1
++                                                send_to_mattermost(f'[acl_pusher][owner={aclObject.owner}, Ссылка на ACL: https://acl.vesta.ru/acl/info/{str(aclObject.id)}] Получен номер SD("{result_id}"). Добавление и проверка записи на портале={aclObject.taskid}')
++                                    if 'ACT_MAKE_GIT' in request.session: del request.session['ACT_MAKE_GIT']
++                                    if 'ACT_OMNI' in request.session: del request.session['ACT_OMNI']
+                                 except Exception as e:
+                                     send_to_mattermost(f"[acl_pusher] Произошла ошибка при формировании заявки: {e}")
+                                     logger.error(f'[acl_pusher] Произошла ошибка при формировании заявки: {e}')
+@@ -929,17 +938,23 @@ def check_taskid_and_status(request, *args, **kwargs):
+                     logger.error(f'[acl_pusher] Ошибка при работе с acl({acl_id}): {e} ')
+                     unsuccess_count += 1
+                     continue
+-        send_to_mattermost(f"[acl_pusher] Результат работы Доталкивателя ACL: ( ACL Проверено: {success_checks_count}; ACL переотправлено: {success_send_omni_count}); Не удалось отправить omni: {unsuccess_count}; Не удалось создать docx: {unsuccessful_make_docx_count}; Не удалось отправить в git: {unsuccessful_send_git_count}")
++        send_to_mattermost(f"[acl_pusher] Результат работы Доталкивателя ACL: ( ACL Проверено: {success_checks_count}; ACL переотправлено: {success_send_omni_count}).")
++        if unsuccessful_make_docx_count > 0:
++            send_to_mattermost(f'[acl_pusher] Не удалось создать docx: {unsuccessful_make_docx_count}.')
++        if unsuccess_count > 0:
++            send_to_mattermost(f'[acl_pusher] Не удалось отправить omni: {unsuccess_count}.')
++        if unsuccessful_send_git_count > 0:
++            send_to_mattermost(f'[acl_pusher] Не удалось отправить в git: {unsuccessful_send_git_count}.')
+         unsuccessful_make_docx_msg = ''
+         if len(unsuccessful_make_docx_acl) > 0:
+             for el in unsuccessful_make_docx_acl:
+                 unsuccessful_make_docx_msg += el + "; "
+-            send_to_mattermost(f'Не удалось сформировать docx для следующих ACL:{unsuccessful_make_docx_msg}')
++            send_to_mattermost(f'[acl_pusher] Не удалось сформировать docx для следующих ACL:{unsuccessful_make_docx_msg}')
+         unsuccessful_git_push_msg = ''
+         if len(unsuccessful_git_push_acl) > 0:
+             for el in unsuccessful_git_push_acl:
+                 unsuccessful_git_push_msg += el + "; "
+-            send_to_mattermost(f'Не удалось сформировать docx для следующих ACL:{unsuccessful_git_push_msg}')
++            send_to_mattermost(f'[acl_pusher] Не удалось сформировать docx для следующих ACL:{unsuccessful_git_push_msg}')
+ 
+         return HttpResponseRedirect(reverse('aclhistory_urls'))
+     return HttpResponse(json.dumps("Error method type"), content_type="application/text")
+@@ -1170,15 +1185,12 @@ def task(request, acl_id)->bool:
+             # if 'GIT_FILENAME' not in request.session:
+             #     raise Exception('Неправильный filename для git репозитория {}'.format(request.session['GIT_FILENAME']))
+ 
+-            if 'GIT_USERNAME' not in request.session or 'GIT_PASSWORD' not in request.session:
+-                logger.error('Невалидные учетные данные для аутентификации')
+-                raise Exception('Невалидные учетные данные для аутентификации')
+             UpdateCallBackStatus(request, acl_id, 'git_upload_status', 'Отправка запроса в gitlab')
+             gitlab_project = obj.project
+             gitlab_filename = obj.git_filename
+             gitlab_repo_url = ACLGitlabStore.objects.get(project=gitlab_project).gitlab_url
+-            g = GitWorker(request, gitlab_repo_url, settings.GITLAB_AUTH_USERNAME,
+-                          settings.GITLAB_AUTH_PASSWORD, None, file_md_abs, taskid=acl_id)
++            g = GitWorker(request, gitlab_repo_url, PATH_OF_GIT_REPO=None, MDFILE=file_md_abs,
++                          taskid=acl_id)
+             if g:
+                 if g.clone():
+                     g.repo.git.checkout('develop')
+@@ -1385,23 +1397,36 @@ def makeAndDownloadMdAndDocx(request, acl_id):
+     file_type = request.GET.get('file_type') or None
+     try:
+         if file_type is not None:
++            logger.info(f'[MAKE FILE] Получен file_type:{file_type}')
+             if file_type == 'docx':
++                logger.info(f'[MAKE FILE] Создание docx файла')
+                 acl_project = local_storage['acl_create_info.html'][4]
+                 gitlab_repo_url = ACLGitlabStore.objects.get(project=acl_project).gitlab_url
+                 file_path = make_doc(request, local_storage, gitlab_repo_url=gitlab_repo_url,
+                                                              gitlab_filename=gitlab_filename)
++                logger.info(f'[MAKE FILE] Файл docx успешно сформирован:{file_path}')
+             elif file_type == 'md':
++                logger.info(f'[MAKE FILE] Создание md файла')
+                 filename_without_extension = os.path.splitext(gitlab_filename)[0]
+                 file_path = MakeMarkDown(request, local_storage, filename_without_extension, acl_id)
++                logger.info(f'[MAKE FILE] Файл md успешно сформирован:{file_path}')
+ 
+             if file_path is not None:
++                logger.info(f'[MAKE FILE] Путь к файлу получен. Подготовка к скачиванию.')
+                 file_name = os.path.basename(file_path)
+-                return FileResponse(open(f'static/{file_type}/{file_name}', 'rb'))
++                logger.info(f'[MAKE FILE] Олучено имя файла:{file_name}')
++                file_md_abs = os.path.join(BASE_DIR, f'static/{file_type}/' + f'{file_name}')
++                if '/' in file_md_abs:
++                    if 'linux' not in sys.platform:
++                        file_md_abs = file_md_abs.replace('/', '\\')
++                logger.info(f'[MAKE FILE] Сформирован абсолютный путь для скачивания:{file_md_abs}')
++
++                return FileResponse(open(file_md_abs, 'rb'))
+         logger.error(f'[MAKE FILE] Не удалось сформировать файл. file_type:{file_type}; file_path:{file_path};')
+-        AclOver()
++        return redirect(request.META.get('HTTP_REFERER'))
+     except Exception as e:
+-        logger.error(f'[MAKE FILE] Exctption: Не удалось сформировать файл. file_type:{file_type}; file_path:{file_path}; Ошибка:{e};')
+-        AclOver()
++        logger.error(f'[MAKE FILE] Exception: Не удалось сформировать файл. file_type:{file_type}; file_path:{file_path}; Ошибка:{e};')
++        return redirect(request.META.get('HTTP_REFERER'))
+ 
+ 
+ class APIACLInfoView(APIView):
+
+
+==== File: ownerlist/utils.py ====
+@@ -1269,9 +1269,11 @@ def MakeMarkDown(request, json_data, filename, fileuuid=''):
+ 
+ 
+ class GitWorker:
+-    def __init__(self, request, GITPRO: None, USERNAME: None, PASSWORD: None,  PATH_OF_GIT_REPO, MDFILE: None, taskid=''):
++    def __init__(self, request, GITPRO=None, USERNAME="aclportal", PASSWORD=None,  PATH_OF_GIT_REPO=None, MDFILE='', taskid=''):
+         os.environ['GIT_TIMEOUT'] = '60'
+         uid = str(uuid.uuid4())
++        self.USERNAME = USERNAME
++        self.gitlab_token = settings.GIT_ACCESS_TOKEN
+         if PATH_OF_GIT_REPO is not None:
+             try:
+                 self.repo = git.Repo.init(PATH_OF_GIT_REPO, bare=True) #PATH_OF_GIT_REPO
+@@ -1292,29 +1294,25 @@ class GitWorker:
+ 
+         self.request = request
+         self.taskid = taskid
+-        #self.request.session['git_upload_status'].append({'status': "Инициализация Git проекта"})
+         UpdateCallBackStatus(request, taskid, 'git_upload_status', 'Инициализация Git проекта')
+ 
+-        if PASSWORD is not None and USERNAME is not None:
+-             self.USERNAME = USERNAME
+-
+-             if '@' in self.USERNAME:
+-                self.USERNAME = self.USERNAME.replace('@', '%40')
+-             else:
+-                 self.USERNAME = self.USERNAME + '%40' + 'alf'+'ast' + 'rah'+'.ru'
+-
+-             if PASSWORD:
+-                 self.PASSWORD = urllib.parse.quote_plus(PASSWORD)
+-             # if '@' in self.PASSWORD:
+-             #     logger.warning('В пароле пользователя {} имеется запрещенный символ'.format(self.USERNAME))
+-
+-             self.GITURL = GITPRO
+-             self.GITPRO = GITPRO.split('://')[1]
+-             self.GITPRO = f"https://{self.USERNAME}:{self.PASSWORD}@{self.GITPRO}"
+-
+-        # if settings.DEBUG:
+-        #     logger.debug('Проверка логина и пароля: {}'.format(self.GITPRO))
+-
++        # if PASSWORD is not None and USERNAME is not None:
++        #      self.USERNAME = USERNAME
++        #
++        #      if '@' in self.USERNAME:
++        #         self.USERNAME = self.USERNAME.replace('@', '%40')
++        #      else:
++        #          self.USERNAME = self.USERNAME + '%40' + 'alf'+'ast' + 'rah'+'.ru'
++        #
++        #      if PASSWORD:
++        #          self.PASSWORD = urllib.parse.quote_plus(PASSWORD)
++        #      # if '@' in self.PASSWORD:
++        #      #     logger.warning('В пароле пользователя {} имеется запрещенный символ'.format(self.USERNAME))
++        #
++
++        self.GITURL = GITPRO
++        self.GITPRO = GITPRO.split('://')[1]
++        self.GITPRO = f"https://:{self.gitlab_token}@{self.GITPRO}"
+ 
+         if PATH_OF_GIT_REPO is not None:
+             self.PATH_OF_GIT_REPO = PATH_OF_GIT_REPO
+@@ -1985,7 +1983,9 @@ def send_to_mattermost(*messages):
+             logger.warning("[Send to Mattermost] Failed to send message. Error: ", response.status_code)
+     except Exception as e:
+         logger.error(e)
+-def get_gitlab_project_info(session, repo_url: str):
++
++
++def get_gitlab_project_info(session, repo_url: str, mode: str = ''):
+     try:
+         # base_api_url = f"https://{request.session['GIT_USERNAME']}%40alfastrah.ru:{request.session['GIT_PASSWORD']}@gitlab.alfastrah.ru/api/v4/projects"
+         base_api_url = f"https://gitlab.alfastrah.ru/api/v4/projects"
+@@ -2000,6 +2000,8 @@ def get_gitlab_project_info(session, repo_url: str):
+             project_id = int(response.json()['id']) or None
+ 
+         if project_id is not None:
++            if mode == 'id':
++                return project_id
+             info = {'namespace':project_namespace, 'project_name':project_name, 'project_id':project_id}
+             return info
+     except Exception as e:
+
+

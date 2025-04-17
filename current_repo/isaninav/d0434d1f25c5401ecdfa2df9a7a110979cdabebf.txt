@@ -1,0 +1,24 @@
+==== File: accesslist/views.py ====
+@@ -1414,14 +1414,18 @@ def makeAndDownloadMdAndDocx(request, acl_id):
+             if file_path is not None:
+                 logger.info(f'[MAKE FILE] Путь к файлу получен. Подготовка к скачиванию.')
+                 file_name = os.path.basename(file_path)
+-                logger.info(f'[MAKE FILE] Олучено имя файла:{file_name}')
++                logger.info(f'[MAKE FILE] Получено имя файла:{file_name}')
+                 file_md_abs = os.path.join(BASE_DIR, f'static/{file_type}/' + f'{file_name}')
+                 if '/' in file_md_abs:
+                     if 'linux' not in sys.platform:
+                         file_md_abs = file_md_abs.replace('/', '\\')
+                 logger.info(f'[MAKE FILE] Сформирован абсолютный путь для скачивания:{file_md_abs}')
+ 
+-                return FileResponse(open(file_md_abs, 'rb'))
++                file = open(file_md_abs, 'rb')
++                file_response = FileResponse(file)
++                file_response['Content-Disposition'] = f'attachment; filename="{file_name}"'
++                return file_response
++
+         logger.error(f'[MAKE FILE] Не удалось сформировать файл. file_type:{file_type}; file_path:{file_path};')
+         return redirect(request.META.get('HTTP_REFERER'))
+     except Exception as e:
+
+

@@ -1,0 +1,12 @@
+==== File: accesslist/templates/acl_pending.html ====
+@@ -101,7 +101,7 @@
+                         <p>Статус: <span>{{ obj.get_status_display }}</span></p>
+                    {% endif %}
+                     {% if obj.status in 'CMP,APRV,CNL' %}
+-                         <p>Согласующий: <span>{{ obj.approve.first_name }} {{ obj.approve.last_name }} </span></p>
++                         <p>Согласующий: <span> {% for approver in obj.approve.all %} {{approver.get_full_name}} {% endfor %}</span></p>
+                     {% endif %}
+ 
+                 {% endlanguage %}
+
+

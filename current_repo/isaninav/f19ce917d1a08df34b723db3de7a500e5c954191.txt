@@ -1,0 +1,21 @@
+==== File: accesslist/admin.py ====
+@@ -1,9 +1,13 @@
+ from django.contrib import admin
+-from .models import ACL
++from .models import ACL, ACLGitlabStore
+ # Register your models here.
+ 
+ class ACLAdmin(admin.ModelAdmin):
+     list_display = ('project', 'status', 'owner', 'id', 'taskid', 'created')
+     list_filter = ('status', 'created')
+ 
+-admin.site.register(ACL,ACLAdmin)
+\ No newline at end of file
++class ACLGitlabStoreAdmin(admin.ModelAdmin):
++    list_display = ('project', 'gitlab_url')
++
++admin.site.register(ACL,ACLAdmin)
++admin.site.register(ACLGitlabStore, ACLGitlabStoreAdmin)
+\ No newline at end of file
+
+

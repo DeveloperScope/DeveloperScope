@@ -1,0 +1,12 @@
+==== File: accesslist/templates/acl_traffic.html ====
+@@ -60,7 +60,7 @@
+                      {% for widget in widgets %}
+                                  <td>
+                                      {% if widget == "input__ip_source" or widget == "input__ip__external" or widget == "input__host_port" %}
+-                                            <input type="text" class="form-control" value="{{item|get_index:forloop.counter0}}" name="{{widget}}_{% random_int %}" {% if widget == "input__ip_source" or widget == "input__ip__external" %} pattern="^((\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.){3}(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])$" {% endif %} autofocus required>
++                                            <input type="text" class="form-control" value="{{item|get_index:forloop.counter0}}" name="{{widget}}_{% random_int %}" {% if widget == "input__ip_source" or widget == "input__ip__external" %} pattern="^((\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.){3}(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])$" {% endif %} {% if widget == "input__host_port" %}pattern="^[a-zA-Z]+/+\d+$" title="port/0"{% endif %} autofocus required>
+                                      {% else %}
+                                             <textarea type="text" class="form-control" rows="1" cols="19" name="{{widget}}_{% random_int %}" {% if widget == "input__application_port" %}title="grpc, kafka, sqlServer" maxlength="50" {% endif %} autofocus required>{% if widget == "input__application_port" %} {% endif %}{{item|get_index:forloop.counter0}}</textarea>
+                                      {% endif %}
+
+

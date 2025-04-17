@@ -1,0 +1,363 @@
+==== File: accesslist/views.py ====
+@@ -636,7 +636,6 @@ class AclOver(BaseView, LoginRequiredMixin, View):
+             messages.warning(request, 'Нехватает данных для формирования ACL')
+             return redirect(reverse(FORM_URLS[1], kwargs={'acl_id': acl_id}))
+ 
+-
+         try:
+             tmp = get_object_or_404(ACL, id=str(acl_id))
+             if len(tmp.taskid) > 4:
+@@ -839,85 +838,106 @@ def upload_acl_from_git(request):
+                 data = {"project_desc": project_desc}
+                 return HttpResponse(json.dumps(data), content_type="application/text")
+             return HttpResponse(json.dumps(result), content_type="application/text")
+-        return HttpResponse(json.dumps("Error method type"), content_type="application/text")
++        return HttpResponse(json.dumps("upload from git error"), content_type="application/text")
++
++
++def send_acl_to_git(request, acl_object):
++    try:
++        file_md = MakeMarkDown(request,
++                               json_data=json.loads(acl_object.acltext),
++                               filename=f'acl_{acl_object.id}',
++                               fileuuid=acl_object.id) or None
++        if not file_md:
++            send_to_mattermost(
++                '[acl_pusher] Ошибка: функция создания md отработала, но файл не сформирован.')
++            raise Exception(
++                '[acl_pusher] Ошибка: функция создания md отработала, но файл не сформирован.')
++
++        file_md_abs = os.path.join(BASE_DIR, file_md)
++        file_md_abs = os.path.normpath(file_md_abs)
++        if not os.path.exists(file_md_abs):
++            send_to_mattermost('[acl_pusher] Ошибка: Сформированный md файл не существует.')
++
++        gitlab_project = acl_object.project
++        gitlab_filename = acl_object.git_filename
++        gitlab_repo_url = ACLGitlabStore.objects.get(project=gitlab_project).gitlab_url
++
++        g = GitWorker(request,
++                      GITPRO=gitlab_repo_url,
++                      PATH_OF_GIT_REPO=None,
++                      MDFILE=file_md_abs,
++                      taskid=acl_object.id
++                      )
++        gitpush_successful = False
++        if g:
++            g.fetch()
++            if g.clone():
++                g.repo.git.checkout('develop')
++                f = g.activity(gitlab_filename)
++                if f:
++                    if g.addindex(f):
++                        if g.push(refspec='develop:develop'):
++                            logger.info(f'[acl_pusher] acl успешно отправлен в git')
++                            send_to_mattermost('[acl_pusher] acl успешно отправлен в git')
++                            gitpush_successful = True
++                        else:
++                            send_to_mattermost('[acl_pusher] acl не удалось отправить в git')
++            g.free()
++            return gitpush_successful
++    except Exception as e:
++        print(f'[acl_pusher] Ошибка отправки в git:{e}')
++        send_to_mattermost(f'[acl_pusher] Ошибка при отправке в git: {e}')
++        logger.error(f'[acl_pusher] Ошибка при отправке в git: {e}')
++        return False
+ 
+ def check_taskid_and_status(request, *args, **kwargs):
+     '''Проверяет acl в omnitracker, если нет - переотправляет'''
+-    if request.method == 'POST':
+-        user = request.user
++
++    if request.method == 'POST' and request.user.is_authenticated and request.user.is_superuser:
++        acl_list = request.POST.getlist('acl_list[]')
++        acl_objects = ACL.objects.filter(id__in=acl_list)
++
+         success_checks_count = 0
+         success_send_omni_count = 0
++        unsuccessful_count = 0
++        unsuccessful_make_docx_count = 0
++        unsuccessful_send_git_count = 0
++
+         unsuccessful_make_docx_acl = []
+         unsuccessful_git_push_acl = []
+-        unsuccess_count = 0
+-        unsuccessful_make_docx_count = 0
+-        unsuccessful_send_git_count  = 0
+-        if user.is_authenticated and user.is_superuser:
+-            checked_acl_list = request.POST.getlist('acl_list[]')
+-            aclObject_list = ACL.objects.filter(id__in=checked_acl_list)
+-            for aclObject in aclObject_list:
+-                try:
+-                    acl_id = aclObject.id
+-                    acl_checking_result = acl_sending_retry_checking(aclObject)
+-                    success_checks_count += 1
+-                    if acl_checking_result is None:
++
++        for acl_object in acl_objects:
++            try:
++                acl_checking_result = acl_sending_retry_checking(acl_object)
++                success_checks_count += 1
++
++                if acl_checking_result is None:
++                    try:
++                        if acl_object.taskid:
++                            send_to_mattermost(
++                                f"[acl_pusher] [Перехвачен Дубль обращения] ACL уже назначен Номер SD:{acl_object.taskid}; Ссылка на ACL :https://acl.vesta.ru/acl/info/{str(acl_object.id)}")
++                            continue
++
+                         try:
+-                            if aclObject.taskid != '':
+-                                send_to_mattermost(f"[acl_pusher] [Перехвачен Дубль обращения] ACL уже назначен Номер SD:{aclObject.taskid}; Ссылка на ACL :https://acl.vesta.ru/acl/info/{str(aclObject.id)}")
+-                                continue
+-                            try:
+-                                gitlab_filename = aclObject.git_filename
+-                                gitlab_project = aclObject.project
+-                                gitlab_repo_url = ACLGitlabStore.objects.get(project=gitlab_project).gitlab_url
+-                                local_storage = json.loads(aclObject.acltext)
+-                                doc_result = make_doc(request, local_storage, acl_id, gitlab_repo_url=gitlab_repo_url, gitlab_filename=gitlab_filename)
+-                                gitpush_successful = False
+-                                try: # Отправка в Гитлаб
+-                                    file_md = MakeMarkDown(request, json.loads(aclObject.acltext),
+-                                                           'acl_{}'.format(acl_id), acl_id) or 'None'
+-                                    if not file_md:
+-                                        send_to_mattermost(
+-                                            '[acl_pusher] Ошибка: функция создания md отработала, но файл не сформирован.')
+-                                        raise Exception(
+-                                            '[acl_pusher] Ошибка: функция создания md отработала, но файл не сформирован.')
+-
+-                                    file_md_abs = os.path.join(BASE_DIR, 'static/md/' + 'acl_{}'.format(
+-                                        str(acl_id)) + '.md')
+-                                    if '/' in file_md_abs:
+-                                        if 'linux' not in sys.platform:
+-                                            file_md_abs = file_md_abs.replace('/', '\\')
+-                                    if not os.path.exists(file_md_abs):
+-                                        file_md_abs = os.path.join(BASE_DIR, 'static/md/' + 'acl_{}'.format(
+-                                            str(acl_id)) + '.md')
+-                                    gitlab_project = aclObject.project
+-                                    gitlab_filename = aclObject.git_filename
+-                                    gitlab_repo_url = ACLGitlabStore.objects.get(
+-                                        project=gitlab_project).gitlab_url
+-                                    g = GitWorker(request, gitlab_repo_url, PATH_OF_GIT_REPO=None, MDFILE=file_md_abs,
+-                                                  taskid=acl_id)
+-                                    if g:
+-                                        g.fetch()
+-                                        if g.clone():
+-                                            g.repo.git.checkout('develop')
+-                                            f = g.activity(gitlab_filename)
+-                                            if f:
+-                                                if g.addindex(f):
+-                                                    if g.push(refspec='develop:develop'):
+-                                                        logger.info(f'[acl_pusher] acl успешно отправлен в git')
+-                                                        send_to_mattermost('[acl_pusher] acl успешно отправлен в git')
+-                                                        gitpush_successful = True
+-                                                    else:
+-                                                        send_to_mattermost('[acl_pusher] acl не удалось отправить в git')
+-                                        g.free()
+-                                except Exception as e:
+-                                    unsuccessful_git_push_acl.append(
+-                                        f'https://acl.vesta.ru/acl/info/{str(aclObject.id)}')
+-                                    unsuccessful_send_git_count += 1
+-                                    send_to_mattermost(f'[acl_pusher] Ошибка при отправке в git: {e}')
+-                                    logger.error(f'[acl_pusher] Ошибка при отправке в git: {e}')
+-
+-                                try: # Отправка в Омнитрекер
+-                                    if settings.OMNITRACKER_URL and gitpush_successful:
++                            gitlab_repo_url = ACLGitlabStore.objects.get(project=acl_object.project).gitlab_url
++                            local_storage = json.loads(acl_object.acltext)
++
++                            gitpush_successful = send_acl_to_git(request, acl_object)
++
++                            doc_result = make_doc(
++                                                  request,
++                                                  data_set=local_storage,
++                                                  fileuuid=acl_object.id,
++                                                  gitlab_repo_url=gitlab_repo_url,
++                                                  gitlab_filename=acl_object.git_filename
++                                                  )
++
++
++                            if not gitpush_successful:
++                                unsuccessful_git_push_acl.append(f'https://acl.vesta.ru/acl/info/{str(acl_object.id)}')
++                                unsuccessful_send_git_count += 1
++                                try:  # Отправка в Омнитрекер
++                                    if settings.OMNITRACKER_URL:
+                                         logger.info(f'[LOCAL DEBUG] gitpush_successful:{gitpush_successful}. Начинаю отправку в омни.')
+                                         try:
+                                             docx_url = f"{request.get_host()}/{doc_result[1:]}"
+@@ -929,68 +949,64 @@ def check_taskid_and_status(request, *args, **kwargs):
+                                         except Exception as e:
+                                             docx_url = ''
+                                             logger.error(f'Ошибка при создании ссылки на docx: {e}')
+-                                        result_id = send_onmitracker(sender=aclObject.owner.email,
+-                                                                     title=f'SH0458 Запрос на предоставление доступа согласован : {str(aclObject.approve.first().get_full_name())}',
+-                                                                     text=f'Прошу предоставить сетевой доступ, согласно ACL. Согласование владельца ресурса во вложении. Ссылка на ACL :https://acl.vesta.ru/acl/info/{str(acl_id)}',
++                                        result_id = send_onmitracker(sender=acl_object.owner.email,
++                                                                     title=f'SH0458 Запрос на предоставление доступа согласован : {str(acl_object.approve.first().get_full_name())}',
++                                                                     text=f'Прошу предоставить сетевой доступ, согласно ACL. Согласование владельца ресурса во вложении. Ссылка на ACL :https://acl.vesta.ru/acl/info/{str(acl_object.id)}',
+                                                                      attach=docx_url,
+                                                                      fake=False,
+                                                                      request=request,
+-                                                                     uid=acl_id
++                                                                     uid=acl_object.id
+                                                                      )
+                                         result_id = int(result_id) or 0
+                                         if result_id == 0:
+-                                            send_to_mattermost(f"[acl_pusher] Мы не смогли создать обращение через OmniTracker")
++                                            send_to_mattermost(
++                                                f"[acl_pusher] Мы не смогли создать обращение через OmniTracker")
+                                             raise Exception('[acl_pusher] Мы не смогли создать обращение через OmniTracker')
+                                         else:
+-                                            if aclObject:
+-                                                aclObject.taskid = str(result_id)
+-                                                aclObject.save(update_fields=['taskid'])
++                                            if acl_object:
++                                                acl_object.taskid = str(result_id)
++                                                acl_object.save(update_fields=['taskid'])
+                                                 success_send_omni_count += 1
+-                                                send_to_mattermost(f'[acl_pusher][owner={aclObject.owner}, Ссылка на ACL: https://acl.vesta.ru/acl/info/{str(aclObject.id)}] Получен номер SD("{result_id}"). Добавление и проверка записи на портале={aclObject.taskid}')
++                                                send_to_mattermost(f'[acl_pusher][owner={acl_object.owner}, Ссылка на ACL: https://acl.vesta.ru/acl/info/{str(acl_object.id)}] Получен номер SD("{result_id}"). Добавление и проверка записи на портале={acl_object.taskid}')
+                                     if 'ACT_MAKE_GIT' in request.session: del request.session['ACT_MAKE_GIT']
+                                     if 'ACT_OMNI' in request.session: del request.session['ACT_OMNI']
+                                 except Exception as e:
+                                     send_to_mattermost(f"[acl_pusher] Произошла ошибка при формировании заявки: {e}")
+                                     logger.error(f'[acl_pusher] Произошла ошибка при формировании заявки: {e}')
+-                                    unsuccess_count += 1
+-
+-                            except Exception as e:
+-                                send_to_mattermost(f"[acl_pusher] Ошибка при создании docx:{e}; Ссылка на ACL :https://acl.vesta.ru/acl/info/{str(aclObject.id)}")
+-                                logger.error(f'[acl_pusher] Ошибка при создании docx: {e}')
+-                                unsuccessful_make_docx_acl.append(f'https://acl.vesta.ru/acl/info/{str(aclObject.id)}')
+-                                unsuccess_count += 1
+-                                unsuccessful_make_docx_count += 1
++                                    unsuccessful_count += 1
++
+                         except Exception as e:
+-                            send_to_mattermost(f"[acl_pusher] Ошибка при отправке обращения в SD:{e}; ")
+-                            logger.error(f'[acl_pusher] Ошибка при отправке обращения в SD: {e}')
+-                            unsuccess_count += 1
+-                except Exception as e:
+-                    send_to_mattermost(f"[acl_pusher] Ошибка при работе с acl({acl_id}): {e}; ")
+-                    logger.error(f'[acl_pusher] Ошибка при работе с acl({acl_id}): {e} ')
+-                    unsuccess_count += 1
+-                    continue
++                            send_to_mattermost(f"[acl_pusher] Ошибка при создании docx:{e}; Ссылка на ACL :https://acl.vesta.ru/acl/info/{str(acl_object.id)}")
++                            logger.error(f'[acl_pusher] Ошибка при создании docx: {e}')
++                            unsuccessful_make_docx_acl.append(f'https://acl.vesta.ru/acl/info/{str(acl_object.id)}')
++                            unsuccessful_count += 1
++                            unsuccessful_make_docx_count += 1
++                    except Exception as e:
++                        send_to_mattermost(f"[acl_pusher] Ошибка при отправке обращения в SD:{e}; ")
++                        logger.error(f'[acl_pusher] Ошибка при отправке обращения в SD: {e}')
++                        unsuccessful_count += 1
++            except Exception as e:
++                send_to_mattermost(f"[acl_pusher] Ошибка при работе с acl({acl_object.id}): {e}; ")
++                logger.error(f'[acl_pusher] Ошибка при работе с acl({acl_object.id}): {e} ')
++                unsuccessful_count += 1
++                continue
+         send_to_mattermost(f"[acl_pusher] Результат работы Доталкивателя ACL: ( ACL Проверено: {success_checks_count}; ACL переотправлено: {success_send_omni_count}).")
+-        if unsuccessful_make_docx_count > 0:
+-            send_to_mattermost(f'[acl_pusher] Не удалось создать docx: {unsuccessful_make_docx_count}.')
+-        if unsuccess_count > 0:
+-            send_to_mattermost(f'[acl_pusher] Не удалось отправить omni: {unsuccess_count}.')
+-        if unsuccessful_send_git_count > 0:
+-            send_to_mattermost(f'[acl_pusher] Не удалось отправить в git: {unsuccessful_send_git_count}.')
+-        unsuccessful_make_docx_msg = ''
+-        if len(unsuccessful_make_docx_acl) > 0:
+-            for el in unsuccessful_make_docx_acl:
+-                unsuccessful_make_docx_msg += el + "; "
+-            send_to_mattermost(f'[acl_pusher] Не удалось сформировать docx для следующих ACL:{unsuccessful_make_docx_msg}')
+-        unsuccessful_git_push_msg = ''
+-        if len(unsuccessful_git_push_acl) > 0:
+-            for el in unsuccessful_git_push_acl:
+-                unsuccessful_git_push_msg += el + "; "
+-            send_to_mattermost(f'[acl_pusher] Не удалось сформировать docx для следующих ACL:{unsuccessful_git_push_msg}')
++
++        unsuccessful_count_messages = [
++                                        f'[acl_pusher] Не удалось создать docx: {unsuccessful_make_docx_count}.' if unsuccessful_make_docx_count > 0 else '',
++                                        f'[acl_pusher] Не удалось отправить omni: {unsuccessful_count}.' if unsuccessful_count > 0 else '',
++                                        f'[acl_pusher] Не удалось отправить в git: {unsuccessful_send_git_count}.' if unsuccessful_send_git_count > 0 else '',
++                                        f'[acl_pusher] Не удалось сформировать docx для следующих ACL:{"; ".join(unsuccessful_make_docx_acl)}' if len(unsuccessful_make_docx_acl) > 0 else '',
++                                        f'[acl_pusher] Не удалось отправить в git следующие ACL:{"; ".join(unsuccessful_git_push_acl)}' if len(unsuccessful_git_push_acl) > 0 else ''
++                                      ]
++
++        for message in [m for m in unsuccessful_count_messages if m]:
++            send_to_mattermost(message)
+ 
+         return HttpResponseRedirect(reverse('aclhistory_urls'))
+-    return HttpResponse(json.dumps("Error method type"), content_type="application/text")
++    return HttpResponse(json.dumps("acl_pusher error"), content_type="application/text")
++
+ 
+-#@csrf_exempt
+ def UploadTemplate(request):
+     try:
+         result = upload_file_handler(request, ParseDocx)
+@@ -1004,7 +1020,7 @@ def UploadTemplate(request):
+ 
+     if request.method == 'POST' and request.is_ajax:
+         return HttpResponse(json.dumps(result), content_type="application/text")
+-    return HttpResponse(json.dumps("Error method type"), content_type="application/text")
++    return HttpResponse(json.dumps("upload template error"), content_type="application/text")
+ 
+ 
+ def CheckIp(request, ip=None):
+
+
+==== File: ownerlist/utils.py ====
+@@ -2717,32 +2717,24 @@ def convert_md_to_dict(md_content: str):
+     except Exception as e:
+         logger.error(e)
+ 
++def acl_sending_retry_checking(acl_object):
++    '''Проверяет acl в omnitracker на наличие заявки'''
++    acl_taskid = acl_object.taskid
++    acl_status = acl_object.status
+ 
+-def acl_sending_retry_checking(aclObject):
+-    """Проверяет acl в omnitracker на наличие заявки"""
+-    acl_taskid = aclObject.taskid
+-    acl_status = aclObject.status
++    omni_taskid = check_taskId_by_uuid(acl_object.id)
+ 
+-    omni_taskid = check_taskId_by_uuid(aclObject.id)
+-    omni_acl_status, omni_http_status = omni_check_status(omni_taskid)
+-
+-    if omni_taskid != "":
+-        result = omni_taskid
+-        # Проверяем Номер SD
++    if omni_taskid:
++        omni_acl_status, omni_http_status = omni_check_status(omni_taskid)
+         if acl_taskid != omni_taskid:
+-            aclObject.taskid = str(omni_taskid)
+-            aclObject.save(update_fields=["taskid"])
+-        if acl_status != omni_acl_status:
+-            # Проверяем статус
+-            if None == omni_acl_status:
+-                return
+-            else:
+-                if omni_acl_status in ["CMP", "JOB", "CNL"]:
+-                    aclObject.status = omni_acl_status
+-                    aclObject.save(update_fields=["status"])
++            acl_object.taskid = str(omni_taskid)
++            acl_object.save(update_fields=['taskid'])
++        if acl_status != omni_acl_status and omni_acl_status in ["CMP", "JOB", "CNL"]:
++            acl_object.status = omni_acl_status
++            acl_object.save(update_fields=['status'])
++        return omni_taskid
+     else:
+-        result = None
+-    return result
++        return None
+ 
+ 
+ def check_taskId_by_uuid(uuid, proxy=None):
+@@ -2873,4 +2865,4 @@ def get_project_desc_from_git(session=None, project_id=""):
+             logger.info("Атрибут project_description не найден в gitlab.")
+     except Exception:
+         logger.error("Ошибка: не удалось получить описание проекта из gitlab.")
+-    return project_desc
++    return project_desc
+\ No newline at end of file
+
+

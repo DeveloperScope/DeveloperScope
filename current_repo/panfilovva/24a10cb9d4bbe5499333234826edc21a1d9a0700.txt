@@ -1,0 +1,14 @@
+==== File: ownerlist/utils.py ====
+@@ -2708,6 +2708,10 @@ def convert_md_to_dict(md_content: str):
+                     "acl_traffic.html",
+                 ]:
+                     parts = [p.strip() for p in line.split("|")[1:-1]]
++                    for part_idx, part in enumerate(parts):
++                        if part == '':
++                            parts[part_idx] = ' '
++
+                     if (
+                         len(parts) > 0
+                         and re.match("^:--", parts[0])
+
+

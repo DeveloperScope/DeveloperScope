@@ -1,0 +1,54 @@
+==== File: accesslist/templates/acl_history.html ====
+@@ -63,6 +63,7 @@
+               <th scope="col">Пользователь</th>
+               <th scope="col">Дата создания</th>
+               <th scope="col">UUID</th>
++              <th scope="col">Номер SD</th>
+               <th scope="col"></th>
+             </tr>
+           </thead>
+@@ -106,7 +107,8 @@
+               </td>
+               <td>{{ acllist.created}}</td>
+               <td class="text-secondary">{{ acllist.id}}</td>
+-                <td class="text-secondary"><a href="{% url 'aclcreate_urls'%}{{ acllist.id }}/"><i class="fas fa-align-justify mr-2"></i>Подробнее</a></td>
++              <td class="text-secondary">{% if acllist.taskid == '' %}Еще не назначено{% else %}{{ acllist.taskid }}{% endif %}</td>
++              <td class="text-secondary"><a href="{% url 'aclcreate_urls'%}{{ acllist.id }}/"><i class="fas fa-align-justify mr-2"></i>Подробнее</a></td>
+             </tr>
+             {% endfor %}
+           </tbody>
+
+
+==== File: accesslist/templates/acl_traffic.html ====
+@@ -44,7 +44,7 @@
+                                         {% if "input__ip" in widget%}
+                                             <input type="text" class="form-control" value="{{item|get_index:forloop.counter0}}" name="{{widget}}_{% random_int %}" title="1.1.1.1" autofocus required>
+                                         {% else %}
+-                                            <textarea type="text" class="form-control" rows="1" cols="19" name="{{widget}}_{% random_int %}" {% if widget == "input__application_port" %}title="grpc, kafka, sqlServer" maxlength="50" {% endif %} {% if widget == "input__host_port" %} title="ping/0" {% endif %} autofocus required>{% if widget == "input__application_port" %} {% endif %}{{item|get_index:forloop.counter0}}</textarea>
++                                            <textarea type="text" class="form-control" rows="1" cols="19" name="{{widget}}_{% random_int %}" {% if widget == "input__application_port" %} title="grpc, kafka, sqlServer" maxlength="50" {% endif %} {% if widget == "input__host_port" %} title="ping/0" {% endif %} autofocus required>{% if widget == "input__application_port" %} {% endif %}{{item|get_index:forloop.counter0}}</textarea>
+                                         {% endif %}
+                                         <span class="validity"></span>
+                                     </td>
+@@ -60,7 +60,7 @@
+                      {% for widget in widgets %}
+                                  <td>
+                                      {% if widget == "input__ip_source" or widget == "input__ip__external" or widget == "input__host_port" %}
+-                                            <input type="text" class="form-control" value="{{item|get_index:forloop.counter0}}" name="{{widget}}_{% random_int %}" {% if widget == "input__ip_source" or widget == "input__ip__external" %} pattern="^((\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.){3}(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])$" {% endif %} {% if widget == "input__host_port" %}pattern="^[a-zA-Z]+/+\d+$" title="port/0"{% endif %} autofocus required>
++                                            <input type="text" class="form-control" value="{{item|get_index:forloop.counter0}}" name="{{widget}}_{% random_int %}" {% if widget == "input__ip_source" or widget == "input__ip__external" %} pattern="^((\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.){3}(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])(/\d{1,2})?$" {% endif %} {% if widget == "input__host_port" %}pattern="^[a-zA-Z]+/+\d+$" title="port/0"{% endif %} autofocus required>
+                                      {% else %}
+                                             <textarea type="text" class="form-control" rows="1" cols="19" name="{{widget}}_{% random_int %}" {% if widget == "input__application_port" %}title="grpc, kafka, sqlServer" maxlength="50" {% endif %} autofocus required>{{item|get_index:forloop.counter0}}</textarea>
+                                      {% endif %}
+
+
+==== File: accesslist/views.py ====
+@@ -883,7 +883,7 @@ def task(request, acl_id)->bool:
+                 sleep(3) #Ждем callback для уведомления пользователю
+ 
+                 doc_result = os.path.join(BASE_DIR, doc_result[1:])
+-                logger.error('ТЕМА ПИСЬМА ' + 'SH0458 Предоставление доступа  Согласовано = '+ str(ACL.objects.get(id=acl_id).owner.get_full_name()))
++                logger.error('ТЕМА ПИСЬМА ' + 'SH0458 Предоставление доступа  Согласовано = '+ str(ACL.objects.get(id=acl_id).approve.get_full_name()))
+ 
+                 e = EmailMessage(subject='SH0458 Запрос на предоставление доступа был согласован :  '+ str(ACL.objects.get(id=acl_id).owner.get_full_name()),
+                                  body='Прошу предоставить сетевой доступ, согласно ACL. Согласование владельца ресурса во вложении. /n Запрос на предоставление доступа был согласован :  '+ str(ACL.objects.get(id=acl_id).owner.get_full_name()) +'/n Ссылка на ACL : https://acl.vesta.ru'+ '/acl/info/'+str(acl_id),
+
+

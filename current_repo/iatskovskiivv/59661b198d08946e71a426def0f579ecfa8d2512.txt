@@ -1,0 +1,80 @@
+==== File: accesslist/admin.py ====
+@@ -1,13 +1,14 @@
+ from django.contrib import admin
+ from .models import ACL, ACLGitlabStore
+-# Register your models here.
+ 
++
++@admin.register(ACL)
+ class ACLAdmin(admin.ModelAdmin):
+     list_display = ('project', 'status', 'owner', 'id', 'taskid', 'created')
+     list_filter = ('status', 'created')
++    list_display_links = list_display
++
+ 
++@admin.register(ACLGitlabStore)
+ class ACLGitlabStoreAdmin(admin.ModelAdmin):
+     list_display = ('project', 'gitlab_url')
+-
+-admin.site.register(ACL,ACLAdmin)
+-admin.site.register(ACLGitlabStore, ACLGitlabStoreAdmin)
+\ No newline at end of file
+
+
+==== File: accesslist/models.py ====
+@@ -1,11 +1,11 @@
+ from django.db import models
+ from django.db.models.signals import pre_save
+ from django.dispatch import receiver
+-from ownerlist.models import Owners
+-from django.contrib.auth.models import User, Group
++from django.contrib.auth.models import User
+ from ownerlist.utils import MakeTemporaryToken
+ from datetime import datetime, timezone
+-from teams.models import Team, Block
++from teams.models import Team
++from uuid import uuid4
+ 
+ 
+ class ACL(models.Model):
+
+
+==== File: accesslist/views.py ====
+@@ -37,7 +37,6 @@ from time import sleep
+ from django.db import transaction
+ import threading
+ 
+-from rest_framework.response import Response
+ from rest_framework.views import APIView
+ 
+ 
+@@ -488,17 +487,20 @@ def save__form(request, owner_form: None, acl_id)->None:
+     if owner_form is None:
+         logger.error("[save__form] owner_form is None")
+         return
++    
+     if owner_form[1] != request.user.email:
+         email = request.user.email
+     else:
+         email = owner_form[1]
+-    user, created = Owners.objects.get_or_create(email=email)
+-    if created:
+-        user.username = owner_form[0]
+-        user.phone = owner_form[2]
+-        user.active = True
+-        user.department = owner_form[3]
+-        user.save()
++    
++
++    user = Owners.objects.filter(email=email).first()
++    if not user:
++        user = Owners.objects.create(email=email,
++                                     username=owner_form[0],
++                                     phone = owner_form[2],
++                                     active = True,
++                                     department = owner_form[3])
+     try:
+         ip, created_ip = Iplist.objects.get_or_create(ipv4=get_client_ip(request))
+         ip.owner = user
+
+

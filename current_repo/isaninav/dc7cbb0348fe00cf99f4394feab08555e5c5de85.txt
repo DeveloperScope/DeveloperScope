@@ -1,0 +1,41 @@
+==== File: accesslist/templates/acl_create_info.html ====
+@@ -196,8 +196,8 @@
+ 
+               <div class="contact-form__submit" style="margin: 15px">
+                     <div class="form-check form-switch">
+-                      <input class="form-check-input big__check" type="checkbox" name="action_make_docx" id="action_make_docx" {% if 'ACT_MAKE_DOCX' in request.session %} checked {% endif %}>
+-                      <label class="form-check-label big__check__label" for="action_make_docx">Создать docx файл</label>
++                      <input class="form-check-input big__check" type="checkbox" name="action_make_docx" id="action_make_docx"  checked style="display:none;">
++<!--                      <label class="form-check-label big__check__label" for="action_make_docx">Создать docx файл</label>-->
+                     </div>
+                     {% if status != 'WTE' %}
+                      <div class="form-check form-switch">
+@@ -380,8 +380,8 @@
+ 
+               <div class="contact-form__submit" style="margin: 15px">
+                     <div class="form-check form-switch">
+-                      <input class="form-check-input big__check" type="checkbox" name="action_make_docx" id="action_make_docx" checked>
+-                      <label class="form-check-label big__check__label" for="action_make_docx">Создать docx файл</label>
++                      <input class="form-check-input big__check" type="checkbox" name="action_make_docx" id="action_make_docx" checked style="display:none;">
++<!--                      <label class="form-check-label big__check__label" for="action_make_docx">Создать docx файл</label>-->
+                     </div>
+ 
+                      <div class="form-check form-switch">
+
+
+==== File: accesslist/views.py ====
+@@ -942,11 +942,7 @@ def task(request, acl_id)->bool:
+         if doc_ready:
+             if 'ACT_MAKE_DOCX' in request.session :
+                 del request.session['ACT_MAKE_DOCX']
+-                UpdateCallBackStatus(request, acl_id, 'docx_download_status', "<a href='{}' class='card-link " \
+-                                                                          "card-download-file text-success' " \
+-                                                                          "target='_blank' download>" \
+-                                                                          "<i class='fas fa-file-word pr-1'>" \
+-                                                                          "</i>Скачать docx файл</a>".format(doc_result), 2)
++                UpdateCallBackStatus(request, acl_id, 'docx_download_status', "Файл docx успешно сформирован", 2)
+     if 'ACT_OMNI' in request.session:
+         logger.error('ПРЕВЕД МЕДВЕД')
+         try:
+
+

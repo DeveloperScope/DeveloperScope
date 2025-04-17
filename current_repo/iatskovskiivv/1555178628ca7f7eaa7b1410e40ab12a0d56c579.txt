@@ -1,0 +1,135 @@
+==== File: accesslist/templates/acl_create_info.html ====
+@@ -5,6 +5,18 @@
+  <div class="col-12">
+ <div class="pl-3 pr-3 pt-3">
+            <div class="main-block">
++           <div class="col-12 pb-3" style="padding-top: 30px">
++                <div class="card border-danger" style="max-width: 655px;">
++                    <div class="card-header card-header bg-danger text-white" style="background-color: #fe0808b0 !important;">Обратите внимание*</div>
++                      <div class="card-body">
++                        <p class="card-text">
++                            В данный момент присутствует ошибка при работе в нескольких вкладках!
++                            Из-за данной ошибки могут попасть не те данные в Omnitracker.<br><br>
++                                <b>ПОЖАЛУЙСТА, РАБОТАЙТЕ ТОЛЬКО С ОДНОЙ ОТКРЫТОЙ ВКЛАДКОЙ ПОРТАЛА ACL.VESTA.RU ДЛЯ ИЗБЕЖАНИЯ ОШИБКИ.</b>
++                        </p>
++                      </div>
++                </div>
++            </div>
+            <div class="main-title-block d-inline-flex w-100 mb-3">
+                    <div class="justify-content-start">
+                        <h4 class="main-title">1. Контактная информация <span class="badge badge-danger">Нужно заполнить</span></h4>
+@@ -244,6 +256,18 @@
+ 
+ <div class="pl-3 pr-3 pt-3">
+            <div class="main-block">
++           <div class="col-12 pb-3">
++                        <div class="card border-danger" style="max-width: 655px;">
++                            <div class="card-header card-header bg-danger text-white" style="background-color: #fe0808b0 !important;">Обратите внимание*</div>
++                              <div class="card-body">
++                                <p class="card-text">
++                                    В данный момент присутствует ошибка при работе в нескольких вкладках!
++                                    Из-за данной ошибки могут попасть не те данные в Omnitracker.<br><br>
++                                        <b>ПОЖАЛУЙСТА, РАБОТАЙТЕ ТОЛЬКО С ОДНОЙ ОТКРЫТОЙ ВКЛАДКОЙ ПОРТАЛА ACL.VESTA.RU ДЛЯ ИЗБЕЖАНИЯ ОШИБКИ.</b>
++                                </p>
++                              </div>
++                        </div>
++                    </div>
+            <div class="main-title-block d-inline-flex w-100 mb-3">
+                    <div class="justify-content-start">
+                        <h4 class="main-title">1. Контактная информация <span class="badge badge-danger">Нужно заполнить</span></h4>
+
+
+==== File: accesslist/templates/acl_demo.html ====
+@@ -6,6 +6,18 @@
+             </div>
+             <div class="col-7 mt-3">
+               <div class="card text-center border-0">
++                    <div class="col-12 pb-3" style="padding-top: 30px">
++                        <div class="card border-danger" style="max-width: 655px;">
++                            <div class="card-header card-header bg-danger text-white" style="background-color: #fe0808b0 !important;">Обратите внимание*</div>
++                              <div class="card-body">
++                                <p class="card-text">
++                                    В данный момент присутствует ошибка при работе в нескольких вкладках!
++                                    Из-за данной ошибки могут попасть не те данные в Omnitracker.<br><br>
++                                        <b>ПОЖАЛУЙСТА, РАБОТАЙТЕ ТОЛЬКО С ОДНОЙ ОТКРЫТОЙ ВКЛАДКОЙ ПОРТАЛА ACL.VESTA.RU ДЛЯ ИЗБЕЖАНИЯ ОШИБКИ.</b>
++                                </p>
++                              </div>
++                        </div>
++                    </div>
+                       <div class="card-body">
+                           <h5 class="card-title">Инициатива по оптимизации внутренних процессов</h5>
+                           <p class="text-secondary">Для обеспечения гибкости взаимодействия, мы запустили данный портал.
+
+
+==== File: accesslist/templates/acl_pending.html ====
+@@ -42,6 +42,7 @@
+                      <div class="ml-5">
+                          <button class="btn btn-secondary btn-cancel-acl">Отклонить</button>
+                          <button class="btn btn-success btn-approve-acl">Согласовать</button>
++                         <input type="hidden" id="is-authenticated" value="{{ request.user.is_authenticated }}" >
+                      </div>
+                     {% else %}
+                      <div class="d-flex">
+@@ -292,14 +293,13 @@
+ 
+                                   {% endfor %}
+                         {% endif %}
++    
+ <script>
+     $(document).ready(function(){
+-
+-    $('.change__approve').click(function() {
+-        let uid = extractUuid(window.location.href);
+-
+-        window.location.href = `/acl/approve/${uid}/?actived=true&&token={{TOKEN}}`;
+-    });
++        $('.change__approve').click(function() {
++            let uid = extractUuid(window.location.href);
++            window.location.href = `/acl/approve/${uid}/?actived=true&&token={{TOKEN}}`;
++        });
+ 
+ {#    {% if obj.taskid %}#}
+ {#        let o = GetTaskStatus('{{ obj.taskid }}', CheckACLStatus);#}
+@@ -319,9 +319,8 @@
+                                 {#       console.error(e);#}
+                                 {#   }#}
+                                 {##}
+-                                {#});#}
++                                {# }); #}
+ {#    {% endif %}#}
+-
+     });
+ </script>
+ {% endblock%}
+
+
+==== File: static/js/main.js ====
+@@ -286,8 +286,14 @@ $(document).ready(function(){
+     });
+ 
+     $(".btn-approve-acl").click(function(){
+-        let uid = extractUuid(window.location.href);
+-        ChangeACLStatus('APRV', uid, goBack);
++        const isAuth = document.getElementById('is-authenticated').value === 'True';
++        if(isAuth){
++            ShowNotify(1, "Пользователь авторизован..")
++            let uid = extractUuid(window.location.href);
++            ChangeACLStatus('APRV', uid, goBack);
++        } else{
++            ShowNotify(0, "Ошибка: Пользователь не авторизован!");
++        }
+     });
+ 
+     $(".modal-stage-cancel").submit(function(e){
+@@ -1007,7 +1013,7 @@ function SetTeamIdAndFilterProjects(team_name){
+         headers: {'X-CSRFToken': csrfToken},
+         success: function(response) {
+             $("input[name='teamid']").val(JSON.parse(response));
+-            FilterProjectsByDepartment();
++            // FilterProjectsByDepartment();
+         }
+     });
+ }
+\ No newline at end of file
+
+

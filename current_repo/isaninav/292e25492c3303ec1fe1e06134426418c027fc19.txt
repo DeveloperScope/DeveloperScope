@@ -1,0 +1,11 @@
+==== File: accesslist/views.py ====
+@@ -1108,6 +1108,7 @@ def task(request, acl_id)->bool:
+                           request.session['GIT_PASSWORD'], None, file_md_abs, taskid=acl_id)
+             if g:
+                 if g.clone():
++                    g.repo.git.checkout('develop')
+                     f = g.activity(gitlab_filename)
+                     if f:
+                         if g.addindex(f):
+
+

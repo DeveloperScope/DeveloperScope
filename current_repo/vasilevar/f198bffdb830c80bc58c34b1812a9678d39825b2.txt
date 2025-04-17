@@ -1,0 +1,14 @@
+==== File: acladmin/tasks.py ====
+@@ -23,6 +23,10 @@ def send_acl(acl_id, gitlab_repo_url):
+     # 1 Создаём docx файл
+     ACL = apps.get_model("accesslist", "ACL")
+     acl_object = ACL.objects.select_for_update().get(id=acl_id)
++
++    if acl_object.taskid:
++        return
++
+     acl_data_set = json.loads(acl_object.acltext)
+ 
+     try:
+
+

@@ -1,0 +1,74 @@
+==== File: accesslist/templates/acl_traffic.html ====
+@@ -72,7 +72,7 @@
+ <form class="form-inline" method="post" action="{{ request.path }}" name="acl-form-internal" class="acl-form-internal">
+     {% csrf_token %}
+         <div class="form-row">
+-            <table class="table table-md table-ip-internal" border="0">
++            <table class="table table-md table-ip-internal">
+                 <thead>
+                      <tr>
+                          <th>Имя хоста (Источник)</th>
+@@ -82,8 +82,7 @@
+                          <th>Протокол/Порт (Назначение)*</th>
+                          <th>ПО использующее нестандартный порт</th>
+                          <th>Описание (цель)</th>
+-                         <th></th>
+-                         <th></th>
++                         <th>Резервирование</th>
+                          <th></th>
+                      </tr>
+ 
+@@ -101,10 +100,14 @@
+                                             <input type="text" class="form-control" value="{{item|get_index:forloop.counter0}}" name="{{widget}}_{% random_int %}" {% if widget == "input__host_port" %} pattern="^[a-zA-Z]+/+(?:\d+|\d+-\d+)(?:,\s*(?:\d+|\d+-\d+))*$" placeholder="UDP/100-200" title="UDP/100-200" {% else %} pattern="^(any|((\d{1,2}|1\d\d|2[0-4]\d|25[0-5]).){3}(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])(/\d{1,2})?)$" title="1.1.1.1" {% endif %} autofocus required>
+                                         {% else %}
+                                             {% if "input__domain_source" in widget or "input__domain_dest" in widget %}
+-                                                <textarea type="text" class="form-control {{widget}}_textarea" rows="1" cols="19" name="{{widget}}_{% random_int %}" autofocus required>{{item|get_index:forloop.counter0}}</textarea>
+-                                                <select class="{{widget}}_select form-control custom_domain_select" style="width:200px;">
++                                            <div class="form-group">  
++                                              <textarea type="text" class="form-control {{widget}}_textarea" rows="1" cols="19" name="{{widget}}_{% random_int %}" autofocus required>{{item|get_index:forloop.counter0}}</textarea>
++                                            </div>
++                                            <div class="form-group">   
++                                              <select class="{{widget}}_select form-control custom_domain_select" style="width:200px;">
+                                                     <option value="" selected>Выбрать Хост</option>
+                                                 </select>
++                                            </div>
+                                             {% else %}
+                                                 <textarea type="text" class="form-control" rows="1" cols="19" name="{{widget}}_{% random_int %}" {% if widget == "input__application_port" %} title="grpc, kafka, sqlServer" maxlength="50" {% endif %} autofocus required>{{item|get_index:forloop.counter0}}</textarea>
+                                             {% endif %}
+@@ -129,10 +132,14 @@
+                                             <input type="text" class="form-control" value="{{item|get_index:forloop.counter0}}" name="{{widget}}_{% random_int %}" {% if widget == "input__ip_source" or widget == "input__ip__external" %} pattern="^(any|((\d{1,2}|1\d\d|2[0-4]\d|25[0-5]).){3}(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])(/\d{1,2})?)$" {% endif %} {% if widget == "input__host_port" %} pattern="^[a-zA-Z]+/+(?:\d+|\d+-\d+)(?:,\s*(?:\d+|\d+-\d+))*$" placeholder="UDP/100-200" title="UDP/100-200"{% endif %} autofocus required>
+                                      {% else %}
+                                             {% if "input__domain_source" in widget or "input__domain_dest" in widget %}
+-                                                <textarea type="text" class="form-control {{widget}}_textarea" rows="1" cols="19" name="{{widget}}_{% random_int %}" autofocus required>{{item|get_index:forloop.counter0}}</textarea>
+-                                                <select class="{{widget}}_select form-control custom_domain_select" style="width:200px;">
++                                            <div class="form-group">
++                                              <textarea type="text" class="form-control {{widget}}_textarea" rows="1" cols="19" name="{{widget}}_{% random_int %}" autofocus required>{{item|get_index:forloop.counter0}}</textarea>
++                                            </div>
++                                            <div class="form-group">
++                                              <select class="{{widget}}_select form-control custom_domain_select" style="width:200px;">
+                                                     <option value="" selected>Выбрать Хост</option>
+                                                 </select>
++                                            </div>
+                                             {% else %}
+                                                 <textarea type="text" class="form-control" rows="1" cols="19" name="{{widget}}_{% random_int %}" {% if widget == "input__application_port" %} title="grpc, kafka, sqlServer" maxlength="50" {% endif %} autofocus required>{{item|get_index:forloop.counter0}}</textarea>
+                                             {% endif %}
+
+
+==== File: static/css/style.css ====
+@@ -655,6 +655,14 @@ input:not([type='checkbox']):valid+span:after, textarea:valid+span:after {
+ 
+ .table-ip-internal th{
+     text-align: center;
++    background-color: #f8f9fa;
++}
++
++.table-ip-internal th, .table-ip-internal td {
++  text-align: center;
++  word-wrap: break-word;
++  white-space: nowrap;
++  padding: 8px;
+ }
+ 
+ .table-ip-internal tr{
+
+

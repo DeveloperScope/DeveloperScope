@@ -1,0 +1,381 @@
+==== File: .gitlab-ci.yml ====
+@@ -35,6 +35,11 @@ lint_code:
+     - tar -czf $backup_archive.tar.gz $SITE_ROOT
+     - ls -las $CI_PROJECT_DIR
+     - cp -r $CI_PROJECT_DIR/* $SITE_ROOT
++    - if grep -q '^COMMIT_TAG=' $SITE_ROOT/.env; then
++        sudo sed -i "s/^COMMIT_TAG=.*/COMMIT_TAG=$CI_COMMIT_TAG/" $SITE_ROOT/.env;
++      else
++        echo "COMMIT_TAG=$CI_COMMIT_TAG" | sudo tee -a $SITE_ROOT/.env;
++      fi
+     - sudo python -m pip config set global.index https://nx.alfastrah.ru/repository/pypi-proxy/pypi
+     - sudo python -m pip config set global.index-url https://nx.alfastrah.ru/repository/pypi-proxy/simple
+     - sudo python -m pip config set global.trusted-host nx.alfastrah.ru
+
+
+==== File: acladmin/settings.py ====
+@@ -9,9 +9,9 @@ https://docs.djangoproject.com/en/3.1/topics/settings/
+ For the full list of settings and their values, see
+ https://docs.djangoproject.com/en/3.1/ref/settings/
+ """
+-import base64
+-from pathlib import Path
++
+ import os
++from pathlib import Path
+ 
+ import dotenv
+ 
+@@ -22,87 +22,87 @@ dotenv_file = os.path.join(BASE_DIR, ".env")
+ if os.path.isfile(dotenv_file):
+     dotenv.load_dotenv(dotenv_file)
+ 
+-SECRET_KEY =  os.environ['SECRET_KEY']
++SECRET_KEY = os.environ["SECRET_KEY"]
+ #    '#8g9jc-u$r!z83lc1bi!e+wif&n^u+*0yy3otebb19lbu)2@dy'
+ 
+ # SECURITY WARNING: don't run with debug turned on in production!
+ DEBUG = True
+ 
+-APPROVE = 'APPROVE_PERSON'
++APPROVE = "APPROVE_PERSON"
+ 
+-ALLOWED_HOSTS = ['*']
++ALLOWED_HOSTS = ["*"]
+ SESSION_SAVE_EVERY_REQUEST = True
+ 
+ # Application definition
+ 
+ INSTALLED_APPS = [
+-    'django.contrib.auth',
+-    'django.contrib.contenttypes',
+-    'django.contrib.sessions',
+-    'django.contrib.messages',
+-    'django.contrib.staticfiles',
+-    'fontawesome-free',
+-    'ownerlist',
+-    'accesslist',
+-    'acladmin',
+-    'django_python3_ldap',
+-    'django.contrib.admin',
+-    'panel',
+-    'teams'
++    "django.contrib.auth",
++    "django.contrib.contenttypes",
++    "django.contrib.sessions",
++    "django.contrib.messages",
++    "django.contrib.staticfiles",
++    "fontawesome-free",
++    "ownerlist",
++    "accesslist",
++    "acladmin",
++    "django_python3_ldap",
++    "django.contrib.admin",
++    "panel",
++    "teams",
+ ]
+ 
+ MIDDLEWARE = [
+-    'django.middleware.security.SecurityMiddleware',
+-    'django.contrib.sessions.middleware.SessionMiddleware',
+-    'django.middleware.common.CommonMiddleware',
+-    'django.middleware.csrf.CsrfViewMiddleware',
+-    'django.contrib.auth.middleware.AuthenticationMiddleware',
+-    'django.contrib.messages.middleware.MessageMiddleware',
+-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
++    "django.middleware.security.SecurityMiddleware",
++    "django.contrib.sessions.middleware.SessionMiddleware",
++    "django.middleware.common.CommonMiddleware",
++    "django.middleware.csrf.CsrfViewMiddleware",
++    "django.contrib.auth.middleware.AuthenticationMiddleware",
++    "django.contrib.messages.middleware.MessageMiddleware",
++    "django.middleware.clickjacking.XFrameOptionsMiddleware",
+ ]
+ 
+-ROOT_URLCONF = 'acladmin.urls'
++ROOT_URLCONF = "acladmin.urls"
+ 
+ TEMPLATES = [
+     {
+-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+-        'DIRS': [
+-            os.path.join(BASE_DIR, 'templates'),
+-        ]
+-        ,
+-        'APP_DIRS': True,
+-        'OPTIONS': {
+-            'context_processors': [
+-                'django.template.context_processors.debug',
+-                'django.template.context_processors.request',
+-                'django.contrib.auth.context_processors.auth',
+-                'django.contrib.messages.context_processors.messages',
++        "BACKEND": "django.template.backends.django.DjangoTemplates",
++        "DIRS": [
++            os.path.join(BASE_DIR, "templates"),
++        ],
++        "APP_DIRS": True,
++        "OPTIONS": {
++            "context_processors": [
++                "django.template.context_processors.debug",
++                "django.template.context_processors.request",
++                "django.contrib.auth.context_processors.auth",
++                "django.contrib.messages.context_processors.messages",
++                "acladmin.context_processors.commit_tag",
+             ],
+-            'libraries':  {
+-                'check_ip': 'accesslist.templatetags.ip_check',
+-                'get_index': 'accesslist.templatetags.get_index',
+-            }
++            "libraries": {
++                "check_ip": "accesslist.templatetags.ip_check",
++                "get_index": "accesslist.templatetags.get_index",
++            },
+         },
+     },
+ ]
+ 
+-WSGI_APPLICATION = 'acladmin.wsgi.application'
++WSGI_APPLICATION = "acladmin.wsgi.application"
+ 
+ 
+ # Database
+ # https://docs.djangoproject.com/en/3.1/ref/settings/#databases
+ 
+-DB_USER =  os.environ['DB_USER']
+-DB_USER_PASSWORD = os.environ['DB_USER_PASSWORD']
++DB_USER = os.environ["DB_USER"]
++DB_USER_PASSWORD = os.environ["DB_USER_PASSWORD"]
+ 
+ DATABASES = {
+-    'default': {
+-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+-        'NAME': 'acl',
+-        'USER': DB_USER,
+-        'PASSWORD': DB_USER_PASSWORD,
+-        'HOST': '127.0.0.1',
+-        'PORT': '5432',
++    "default": {
++        "ENGINE": "django.db.backends.postgresql_psycopg2",
++        "NAME": "acl",
++        "USER": DB_USER,
++        "PASSWORD": DB_USER_PASSWORD,
++        "HOST": "127.0.0.1",
++        "PORT": "5432",
+     }
+ }
+ 
+@@ -111,16 +111,16 @@ DATABASES = {
+ 
+ AUTH_PASSWORD_VALIDATORS = [
+     {
+-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
++        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
+     },
+     {
+-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
++        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
+     },
+     {
+-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
++        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
+     },
+     {
+-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
++        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
+     },
+ ]
+ 
+@@ -128,9 +128,9 @@ AUTH_PASSWORD_VALIDATORS = [
+ # Internationalization
+ # https://docs.djangoproject.com/en/3.1/topics/i18n/
+ 
+-LANGUAGE_CODE = 'en-us'
++LANGUAGE_CODE = "en-us"
+ 
+-TIME_ZONE = 'Europe/Moscow'
++TIME_ZONE = "Europe/Moscow"
+ 
+ USE_I18N = True
+ 
+@@ -142,64 +142,59 @@ USE_TZ = True
+ # Static files (CSS, JavaScript, Images)
+ # https://docs.djangoproject.com/en/3.1/howto/static-files/
+ 
+-STATIC_URL = '/static/'
+-#STATIC_ROOT = os.path.join(BASE_DIR, 'static')
++STATIC_URL = "/static/"
++# STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+ 
+ STATICFILES_DIRS = [
+-    os.path.join(BASE_DIR, 'static'),
++    os.path.join(BASE_DIR, "static"),
+ ]
+ 
+-if os.name == 'nt':
+-    LOGPATH = os.path.join(BASE_DIR, 'log\\debug.log')
++if os.name == "nt":
++    LOGPATH = os.path.join(BASE_DIR, "log\\debug.log")
+ else:
+-    LOGPATH = os.path.join(BASE_DIR, 'log//debug.log')
++    LOGPATH = os.path.join(BASE_DIR, "log//debug.log")
+ 
+ LOGGING = {
+-    'version': 1,
+-    'disable_existing_loggers': False,
+-    'formatters':
+-        {
+-            'file': {
+-                'format': '%(levelname)s|%(asctime)s|%(module)s|%(process)d|%(filename)s|%(lineno)d|%(message)s',
+-                'datefmt': '%d/%b/%Y %H:%M:%S'
+-                    }
+-         },
+-
+-    'handlers': {
+-        'file': {
+-                'level': 'DEBUG', #WARNING
+-                'class': 'logging.handlers.RotatingFileHandler',
+-                'filename': LOGPATH,
+-                'maxBytes': 1024*1024*5, # 5MB
+-                'backupCount': 0,
+-                'formatter': 'file',
++    "version": 1,
++    "disable_existing_loggers": False,
++    "formatters": {
++        "file": {
++            "format": "%(levelname)s|%(asctime)s|%(module)s|%(process)d|%(filename)s|%(lineno)d|%(message)s",
++            "datefmt": "%d/%b/%Y %H:%M:%S",
++        }
++    },
++    "handlers": {
++        "file": {
++            "level": "DEBUG",  # WARNING
++            "class": "logging.handlers.RotatingFileHandler",
++            "filename": LOGPATH,
++            "maxBytes": 1024 * 1024 * 5,  # 5MB
++            "backupCount": 0,
++            "formatter": "file",
+         },
+         "console": {
+             "class": "logging.StreamHandler",
+         },
+     },
+-
+-    'loggers': {
+-        '': {
+-            'handlers': ['file'],
+-            'level': 'DEBUG', #WARNING
+-            'propagate': True,
++    "loggers": {
++        "": {
++            "handlers": ["file"],
++            "level": "DEBUG",  # WARNING
++            "propagate": True,
+         },
+-
+         "django_python3_ldap": {
+             "handlers": ["file"],
+             "level": "DEBUG",
+         },
+-
+         "git": {
+             "handlers": ["file"],
+-            "level": "WARNING", #DEBUG #WARNING
++            "level": "WARNING",  # DEBUG #WARNING
+         },
+     },
+ }
+ 
+ 
+-LOGIN_REDIRECT_URL = '/acl/welcome/'
++LOGIN_REDIRECT_URL = "/acl/welcome/"
+ 
+ AUTHENTICATION_BACKENDS = (
+     "accesslist.auth.MyAuthBackend",
+@@ -207,8 +202,8 @@ AUTHENTICATION_BACKENDS = (
+     "django_python3_ldap.auth.LDAPBackend",
+ )
+ 
+-LDAP_AUTH_URL = os.environ['LDAP_AUTH_URL']
+-LDAP_AUTH_SEARCH_BASE = os.environ['LDAP_AUTH_SEARCH_BASE']
++LDAP_AUTH_URL = os.environ["LDAP_AUTH_URL"]
++LDAP_AUTH_SEARCH_BASE = os.environ["LDAP_AUTH_SEARCH_BASE"]
+ 
+ LDAP_AUTH_USE_TLS = True
+ LDAP_AUTH_OBJECT_CLASS = "organizationalPerson"
+@@ -226,37 +221,42 @@ LDAP_AUTH_USER_LOOKUP_FIELDS = ("username",)
+ LDAP_AUTH_CLEAN_USER_DATA = "django_python3_ldap.utils.clean_user_data"
+ LDAP_AUTH_SYNC_USER_RELATIONS = "django_python3_ldap.utils.sync_user_relations"
+ LDAP_AUTH_FORMAT_SEARCH_FILTERS = "django_python3_ldap.utils.format_search_filters"
+-LDAP_AUTH_FORMAT_USERNAME = "django_python3_ldap.utils.format_username_active_directory_principal"
++LDAP_AUTH_FORMAT_USERNAME = (
++    "django_python3_ldap.utils.format_username_active_directory_principal"
++)
+ 
+-LDAP_AUTH_URL = os.environ['LDAP_AUTH_URL']
+-LDAP_AUTH_SEARCH_BASE = os.environ['LDAP_AUTH_SEARCH_BASE']
+-LDAP_AUTH_ACTIVE_DIRECTORY_DOMAIN = os.environ['LDAP_AUTH_ACTIVE_DIRECTORY_DOMAIN']
+-LDAP_AUTH_CONNECTION_USERNAME = os.environ['LDAP_AUTH_CONNECTION_USERNAME']
+-LDAP_AUTH_CONNECTION_PASSWORD = os.environ['LDAP_AUTH_CONNECTION_PASSWORD']
+-LDAP_AUTH_CONNECTION_DOMAIN =os.environ['LDAP_AUTH_CONNECTION_DOMAIN']
++LDAP_AUTH_URL = os.environ["LDAP_AUTH_URL"]
++LDAP_AUTH_SEARCH_BASE = os.environ["LDAP_AUTH_SEARCH_BASE"]
++LDAP_AUTH_ACTIVE_DIRECTORY_DOMAIN = os.environ["LDAP_AUTH_ACTIVE_DIRECTORY_DOMAIN"]
++LDAP_AUTH_CONNECTION_USERNAME = os.environ["LDAP_AUTH_CONNECTION_USERNAME"]
++LDAP_AUTH_CONNECTION_PASSWORD = os.environ["LDAP_AUTH_CONNECTION_PASSWORD"]
++LDAP_AUTH_CONNECTION_DOMAIN = os.environ["LDAP_AUTH_CONNECTION_DOMAIN"]
+ 
+-GITLAB_AUTH_USERNAME = os.environ['GITLAB_AUTH_USERNAME']
+-GITLAB_AUTH_PASSWORD = os.environ['GITLAB_AUTH_PASSWORD']
++GITLAB_AUTH_USERNAME = os.environ["GITLAB_AUTH_USERNAME"]
++GITLAB_AUTH_PASSWORD = os.environ["GITLAB_AUTH_PASSWORD"]
+ 
+-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+-EMAIL_ADMIN = 'ragulinma@alfastrah.ru'
+-EMAIL_SD = os.environ['EMAIL_SD']
++EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
++EMAIL_ADMIN = "ragulinma@alfastrah.ru"
++EMAIL_SD = os.environ["EMAIL_SD"]
+ 
+ EMAIL_USE_TLS = False
+-EMAIL_HOST = os.environ['EMAIL_HOST']
+-EMAIL_PORT =os.environ['EMAIL_PORT']
+-EMAIL_HOST_USER = os.environ['EMAIL_HOST_USER']
+-EMAIL_HOST_PASSWORD = os.environ['EMAIL_HOST_PASSWORD']
++EMAIL_HOST = os.environ["EMAIL_HOST"]
++EMAIL_PORT = os.environ["EMAIL_PORT"]
++EMAIL_HOST_USER = os.environ["EMAIL_HOST_USER"]
++EMAIL_HOST_PASSWORD = os.environ["EMAIL_HOST_PASSWORD"]
+ 
+-GIT_ACCESS_TOKEN = os.environ['GIT_ACCESS_TOKEN']
++GIT_ACCESS_TOKEN = os.environ["GIT_ACCESS_TOKEN"]
+ 
+-MATTERMOST_WEBHOOK_URL = 'https://mattermost.alfastrah.ru/hooks/naht8rbp4fdwpf43pbsyatanka'
++MATTERMOST_WEBHOOK_URL = (
++    "https://mattermost.alfastrah.ru/hooks/naht8rbp4fdwpf43pbsyatanka"
++)
+ 
+ OMNITRACKER_URL = "http://ot10.vesta.ru/otws/v1.asmx"
+ TIMEOUT = 120
+ ATTEMPS = 3
+-JS_TIMEOUT = 3000 #msec
++JS_TIMEOUT = 3000  # msec
+ 
+ MAKE_TASK_AFTER_APRROVE = True
+ 
+ DATA_UPLOAD_MAX_NUMBER_FIELDS = 10000
++COMMIT_TAG = os.environ.get("COMMIT_TAG", "1.0.0")
+
+
+==== File: templates/base.html ====
+@@ -58,6 +58,9 @@
+ 
+       </div>
+    </div>
++   <div class="col-2 d-flex justify-content-end align-items-center">
++    <h6 class="mb-0 text-white ml-auto">version: {{ commit_tag }}</h6>
++  </div>
+     <script type="text/javascript">
+     $("form[name='search-text']").on("submit", function(e){
+             $(".search-spinner").hide();
+
+

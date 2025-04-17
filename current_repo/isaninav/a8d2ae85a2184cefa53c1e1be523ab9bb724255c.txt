@@ -1,0 +1,52 @@
+==== File: accesslist/admin.py ====
+@@ -3,7 +3,7 @@ from .models import ACL
+ # Register your models here.
+ 
+ class ACLAdmin(admin.ModelAdmin):
+-    list_display = ('project', 'status', 'owner', 'id', 'taskid')
+-    list_filter = ('status',)
++    list_display = ('project', 'status', 'owner', 'id', 'taskid', 'created')
++    list_filter = ('status', 'created')
+ 
+ admin.site.register(ACL,ACLAdmin)
+\ No newline at end of file
+
+
+==== File: accesslist/templates/acl_history.html ====
+@@ -131,8 +131,8 @@
+ {#                  </div>#}
+               </td>
+               <td>{{ acllist.created}}</td>
+-              <td class="text-secondary">{{ acllist.id}}</td>
+-              <td class="text-secondary">{% if acllist.taskid != '' %}{{ acllist.taskid }}{% else %}Еще не назначено{% endif %}</td>
++              <td class="text-secondary" onclick="copyTextToClipboard(this)" title="Копировать">{{ acllist.id}}</td>
++              <td class="text-secondary" onclick="copyTextToClipboard(this)" title="Копировать">{% if acllist.taskid != '' %}{{ acllist.taskid }}{% else %}Еще не назначено{% endif %}</td>
+               <td class="text-secondary"><a href="{% url 'aclcreate_urls'%}{{ acllist.id }}/"><i class="fas fa-align-justify mr-2"></i>Подробнее</a></td>
+             </tr>
+             {% endfor %}
+@@ -223,6 +223,11 @@
+     //   clearTimeout(t);
+  //   });
+ 
++    function copyTextToClipboard(element){
++        var text = element.textContent;
++        navigator.clipboard.writeText(text);
++    }
++
+ </script>
+ <script>
+ <!--  Проверка/Подстановка значений фильтров  -->
+
+
+==== File: accesslist/templates/acl_traffic.html ====
+@@ -60,7 +60,7 @@
+                      {% for widget in widgets %}
+                                  <td>
+                                      {% if widget == "input__ip_source" or widget == "input__ip__external" or widget == "input__host_port" %}
+-                                            <input type="text" class="form-control" value="{{item|get_index:forloop.counter0}}" name="{{widget}}_{% random_int %}" {% if widget == "input__ip_source" or widget == "input__ip__external" %} pattern="^((\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.){3}(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])(/\d{1,2})?$" {% endif %} {% if widget == "input__host_port" %}pattern="^[a-zA-Z]+/+(?:\d+|\d+-\d+)$" title="port/0"{% endif %} autofocus required>
++                                            <input type="text" class="form-control" value="{{item|get_index:forloop.counter0}}" name="{{widget}}_{% random_int %}" {% if widget == "input__ip_source" or widget == "input__ip__external" %} pattern="^(any|((\d{1,2}|1\d\d|2[0-4]\d|25[0-5]).){3}(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])(/\d{1,2})?)$" {% endif %} {% if widget == "input__host_port" %}pattern="^[a-zA-Z]+/+\d+$" title="port/0"{% endif %} autofocus required>
+                                      {% else %}
+                                             <textarea type="text" class="form-control" rows="1" cols="19" name="{{widget}}_{% random_int %}" {% if widget == "input__application_port" %}title="grpc, kafka, sqlServer" maxlength="50" {% endif %} autofocus required>{{item|get_index:forloop.counter0}}</textarea>
+                                      {% endif %}
+
+

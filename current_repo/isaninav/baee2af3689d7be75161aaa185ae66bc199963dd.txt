@@ -1,0 +1,24 @@
+==== File: accesslist/views.py ====
+@@ -848,7 +848,7 @@ def task(request, acl_id)->bool:
+                     logger.error('URL ОТПРАВКИ В OMNI' + str(docx_url))
+ 
+                     if '://' not in docx_url:
+-                        docx_url = 'http://' + docx_url
++                        docx_url = 'https://' + docx_url
+ 
+                     result_id = send_onmitracker(sender=obj.owner.email,
+                                                  title=f'SH0458 Запрос на предоставление доступа согласован : {str(ACL.objects.get(id=acl_id).approve.first().get_full_name())}',
+
+
+==== File: requirements.txt ====
+@@ -16,7 +16,7 @@ importlib-metadata==4.0.1
+ ldap3==2.9
+ lxml==4.6.2
+ Markdown==3.3.4
+-mysqlclient
++mysqlclient==2.0.3
+ ntlm-auth==1.5.0
+ pbr==5.6.0
+ psutil==5.8.0
+
+

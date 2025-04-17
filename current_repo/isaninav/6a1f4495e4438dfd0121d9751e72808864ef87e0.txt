@@ -1,0 +1,87 @@
+==== File: accesslist/templates/acl_create_info.html ====
+@@ -71,8 +71,8 @@
+                     </div>
+                         {% else %}
+                           <form action="{%  url 'acl_template_urls' %}" method="post" enctype="multipart/form-data" id="upload_template">
+-                             <input type="file" id="input--file--upload" name="input--file--upload" class="btn-secondary m-1" accept=".docx">
+-                             <label for="input--file--upload" class="btn btn-upload btn-secondary m-1 input--file--label">Загрузить ACL из файла</label>
++                             <input type="file" id="input--file--upload" name="input--file--upload" class="btn-secondary m-1" accept=".docx" disabled>
++                             <label for="input--file--upload" class="btn btn-upload btn-secondary m-1 input--file--label" style="display:none;">Загрузить ACL из файла</label>
+                              {% csrf_token %}
+                          </form>
+                         </form>
+@@ -256,8 +256,8 @@
+                       <div class="justify-content-end">
+                          <form action="{%  url 'acl_template_urls' %}" method="post" enctype="multipart/form-data" id="upload_template">
+ {#                             parse_file_form#}
+-                             <input type="file" id="input--file--upload" name="input--file--upload" class="btn-secondary m-1" accept=".docx">
+-                             <label for="input--file--upload" class="btn btn-upload btn-secondary m-1 input--file--label">Загрузить ACL из файла</label>
++                             <input type="file" id="input--file--upload" name="input--file--upload" class="btn-secondary m-1" accept=".docx" disabled>
++                             <label for="input--file--upload" class="btn btn-upload btn-secondary m-1 input--file--label" style="display:none;">Загрузить ACL из файла</label>
+                              {% csrf_token %}
+ {#                             <button type="button"  class="btn btn-upload btn-secondary btn-lg m-1">Загрузить ACL из файла</button>#}
+                          </form>
+@@ -519,6 +519,13 @@
+                     if ("project_desc" in response){
+                         localStorage.setItem('uploaded_project_desc', response["project_desc"]);
+                     }
++                    if ("LOCAL_STORAGE" in response){
++                        localStorage.setItem('local_storage_is_exist', 1);
++                    }
++                    else{
++                        localStorage.setItem('local_storage_is_exist', 0);
++                    }
++                    localStorage.setItem('response', response);
+                     localStorage.setItem('uploaded_project_name', gitlab_project_name);
+                     localStorage.setItem('uploaded_filename', gitlab_uploaded_filename);
+                     localStorage.setItem('showNotification', 'true');
+@@ -529,11 +536,9 @@
+                 upload_from_git_btn.disabled = false;
+             }
+         };
+-
+         xhr.onerror = function() {
+             ShowNotify(0, 'Ошибка при выполнении запроса');
+         };
+-
+         xhr.send(new FormData(upload_git_form));
+     });
+ 
+@@ -581,6 +586,12 @@
+             }
+         });
+     });
++
++    var check_local_storage = localStorage.getItem('local_storage_is_exist');
++    if (check_local_storage == 0){
++        document.getElementById('input--file--upload').disabled = false;
++        document.querySelector('label[for="input--file--upload"]').style.display = 'block';
++    }
+ </script>
+ <script>
+ <!--  Update projects from gitlab  -->
+
+
+==== File: accesslist/views.py ====
+@@ -749,19 +749,7 @@ def Gitcheck(request):
+             if request.POST.get('git_url', '') == '':
+                 if 'ACT_MAKE_GIT' in request.session:
+                     del request.session['ACT_MAKE_GIT']
+-                # if 'GIT_URL' in request.session:
+-                #     del request.session['GIT_URL']
+-                # if 'GIT_FILENAME' in request.session:
+-                #     del request.session['GIT_FILENAME']
+                 result = {'error': 'Git проект не может быть пустым'}
+-            # elif not re.match('^(https:\/\/git)?(.)+(.git)$',request.POST.get('git_url', '')):
+-            #    result = {'error': 'Не валидные данные'}
+-            # elif request.POST.get('git_file') == "" or request.POST.get('git_file') == "Нет":
+-            #     result = {'error': 'Имя файла не найдено'}
+-            # else:
+-                # request.session['GIT_URL'] = request.POST.get('git_url')
+-                # request.session['GIT_FILENAME'] = request.POST.get('git_file')
+-
+         return HttpResponse(json.dumps(result), content_type="application/json")
+     return HttpResponse(status=405)
+ 
+
+

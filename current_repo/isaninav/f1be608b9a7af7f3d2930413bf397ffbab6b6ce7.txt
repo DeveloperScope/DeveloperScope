@@ -1,0 +1,61 @@
+==== File: accesslist/models.py ====
+@@ -2,7 +2,7 @@ from django.db import models
+ from ownerlist.models import Owners
+ from django.contrib.auth.models import User, Group
+ from ownerlist.utils import MakeTemporaryToken
+-from datetime import datetime
++from datetime import datetime, timezone
+ from teams.models import Team, Block
+ 
+ 
+@@ -35,11 +35,29 @@ class ACL(models.Model):
+     team = models.ForeignKey(Team, null=True, on_delete=models.SET_NULL, editable=True)
+     git_filename = models.CharField(blank=True, default="", editable=True, max_length=256)
+ 
++    last_status = models.CharField(max_length=20, default='')
++    last_status_change_date = models.DateTimeField(blank=True, null=True)
++    status_complete_date = models.DateTimeField(blank=True, null=True)
++
+     def save(self, *args, **kwargs):
+         if self.token is None or self.token == '':
+             self.token = MakeTemporaryToken()
++        if self.status != self._state.adding and self.status != self.last_status:
++            if self.status not in ["CMP", "CNL"]:
++                self.last_status = self.status
++                self.last_status_change_date = datetime.now(timezone.utc)
++            else:
++                self.status_complete_date = datetime.now(timezone.utc)
+         super().save(*args, **kwargs)
+ 
++    def days_in_job_status(self):
++        if self.status == 'JOB' and self.last_status_change_date:
++            return (datetime.now().date() - self.last_status_change_date.date()).days
++        elif self.status in ["CMP", "CNL"] and self.last_status_change_date and self.status_complete_date:
++            return (self.status_complete_date.date() - self.last_status_change_date.date()).days
++        else:
++            return 0
++
+ class AclHistory(models.Model):
+     id = models.BigAutoField(db_index=True, primary_key=True)
+     pkid = models.UUIDField(db_index=True, editable=True)
+
+
+==== File: accesslist/templates/acl_history.html ====
+@@ -89,6 +89,7 @@
+               <th scope="col">Дата создания</th>
+               <th scope="col">UUID</th>
+               <th scope="col">Номер SD</th>
++              <th scope="col">Дни в работе</th>
+               <th scope="col"></th>
+             </tr>
+           </thead>
+@@ -133,6 +134,7 @@
+               <td>{{ acllist.created}}</td>
+               <td class="text-secondary" onclick="copyTextToClipboard(this)" title="Копировать">{{ acllist.id}}</td>
+               <td class="text-secondary" onclick="copyTextToClipboard(this)" title="Копировать">{% if acllist.taskid != '' %}{{ acllist.taskid }}{% else %}Еще не назначено{% endif %}</td>
++              <td class="text-secondary">{% if acllist.status == 'JOB' or acllist.status == 'CMP' or acllist.status == 'CNL' %} {{acllist.days_in_job_status}} {% endif %}</td>
+               <td class="text-secondary"><a href="{% url 'aclcreate_urls'%}{{ acllist.id }}/"><i class="fas fa-align-justify mr-2"></i>Подробнее</a></td>
+             </tr>
+             {% endfor %}
+
+

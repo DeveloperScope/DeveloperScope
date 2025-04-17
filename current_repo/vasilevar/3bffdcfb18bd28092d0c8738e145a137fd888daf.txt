@@ -1,0 +1,1194 @@
+==== File: accesslist/signals.py ====
+@@ -1,12 +1,15 @@
+ from django.db.models.signals import post_save
+ from django.dispatch import receiver
+ 
+-from .models import ACL, ACLGitlabStore
+ from acladmin.tasks import send_acl
+ 
++from .models import ACL, ACLGitlabStore
++
+ 
+ @receiver(post_save, sender=ACL)
+ def run_send_acl_task(sender, instance, **kwargs):
+     if instance.status == "APRV":
+-        gitlab_repo_url = ACLGitlabStore.objects.get(project=instance.project).gitlab_url
++        gitlab_repo_url = ACLGitlabStore.objects.get(
++            project=instance.project
++        ).gitlab_url
+         send_acl.delay(acl_id=instance.id, gitlab_repo_url=gitlab_repo_url)
+
+
+==== File: acladmin/tasks.py ====
+@@ -1,49 +1,65 @@
+ import json
+ import os
+-import time
+ 
+ from celery import shared_task
+ from django.apps import apps
+ 
+-
+ from acladmin import settings
+-from ownerlist.utils import make_doc, celery_send_omnitracker, GitWorker, \
+-    create_markdown_file, check_acl_in_omni, send_to_mattermost
++from ownerlist.utils import (
++    GitWorker,
++    celery_send_omnitracker,
++    check_acl_in_omni,
++    create_markdown_file,
++    make_doc,
++    send_to_mattermost,
++)
+ 
+ 
+ @shared_task
+ def send_acl(acl_id, gitlab_repo_url):
+-    send_to_mattermost(f"[acl_portal][Celery send_acl] Cтарт задачи.")
++    send_to_mattermost("[acl_portal][Celery send_acl] Cтарт задачи.")
+     # 1 Создаём docx файл
+-    ACL = apps.get_model('accesslist', "ACL")
++    ACL = apps.get_model("accesslist", "ACL")
+     acl_object = ACL.objects.get(id=acl_id)
+     acl_data_set = json.loads(acl_object.acltext)
+ 
+     try:
+-        doc_result = make_doc(request=None,
+-                              data_set=acl_data_set,
+-                              fileuuid=acl_object.id,
+-                              gitlab_repo_url=gitlab_repo_url,
+-                              gitlab_filename=acl_object.git_filename
+-                              )
++        doc_result = make_doc(
++            request=None,
++            data_set=acl_data_set,
++            fileuuid=acl_object.id,
++            gitlab_repo_url=gitlab_repo_url,
++            gitlab_filename=acl_object.git_filename,
++        )
+     except Exception as e:
+-        print(f'[acl_portal][Celery send_acl] Не удалось сформировать docx файл:{e}.')
+-        send_to_mattermost(f'[acl_portal][Celery send_acl] Не удалось сформировать docx файл:{e}.')
++        print(f"[acl_portal][Celery send_acl] Не удалось сформировать docx файл:{e}.")
++        send_to_mattermost(
++            f"[acl_portal][Celery send_acl] Не удалось сформировать docx файл:{e}."
++        )
+         return False
+ 
+     docx_url = f"https://acl.vesta.ru/{doc_result[1:]}"
+-    send_to_mattermost(f"[acl_portal][Celery send_acl] Старт отправки ACL({acl_object.id}) в omnitracker.")
++    send_to_mattermost(
++        f"[acl_portal][Celery send_acl] Старт отправки ACL({acl_object.id}) в omnitracker."
++    )
+     # 2 Отправляем docx файл в omnitracker
+-    task_id = celery_send_omnitracker(sender=acl_object.owner.email,
+-                                      title=f'SH0458 Запрос на предоставление доступа согласован: {str(acl_object.approve.first().get_full_name())}',
+-                                      text=f'Прошу предоставить сетевой доступ, согласно ACL. Согласование владельца ресурса во вложении. Ссылка на ACL :https://acl.vesta.ru/acl/info/{str(acl_object.id)}',
+-                                      attach=docx_url,
+-                                      uuid=acl_object.id
+-                                      )
+-    send_to_mattermost(f"[acl_portal][Celery send_acl] ACL({acl_object.id}) отправлен в omnitracker. Получен task_id:({task_id})")
++    task_id = celery_send_omnitracker(
++        sender=acl_object.owner.email,
++        title=f"SH0458 Запрос на предоставление доступа согласован: {str(acl_object.approve.first().get_full_name())}",
++        text=f"Прошу предоставить сетевой доступ, согласно ACL. Согласование владельца ресурса во вложении. Ссылка на ACL :https://acl.vesta.ru/acl/info/{str(acl_object.id)}",
++        attach=docx_url,
++        uuid=acl_object.id,
++    )
++    send_to_mattermost(
++        f"[acl_portal][Celery send_acl] ACL({acl_object.id}) отправлен в omnitracker. Получен task_id:({task_id})"
++    )
+     if task_id is None:
+-        print(f"[acl_portal][Celery send_acl] Ошибка: Заявку({acl_object.id}) Не удалось отправить в omnitracker.")
+-        send_to_mattermost(f"[acl_portal][Celery send_acl] Ошибка: Заявку({acl_object.id}) Не удалось отправить в omnitracker.")
++        print(
++            f"[acl_portal][Celery send_acl] Ошибка: Заявку({acl_object.id}) Не удалось отправить в omnitracker."
++        )
++        send_to_mattermost(
++            f"[acl_portal][Celery send_acl] Ошибка: Заявку({acl_object.id}) Не удалось отправить в omnitracker."
++        )
+         return False
+ 
+     acl_object.taskid = task_id
+@@ -52,13 +68,17 @@ def send_acl(acl_id, gitlab_repo_url):
+ 
+     # 3 Создаём md файл
+     filename_without_extension = os.path.splitext(acl_object.git_filename)[0]
+-    md_file = create_markdown_file(request=None,
+-                                   json_data=acl_data_set,
+-                                   filename=filename_without_extension,
+-                                   fileuuid=acl_object.id)
+-    if md_file == False:
+-        print(f"[acl_portal][Celery send_acl] Ошибка: Не удалось сформировать md файл.")
+-        send_to_mattermost(f"[acl_portal][Celery send_acl] Ошибка: Не удалось сформировать md файл.")
++    md_file = create_markdown_file(
++        request=None,
++        json_data=acl_data_set,
++        filename=filename_without_extension,
++        fileuuid=acl_object.id,
++    )
++    if md_file is False:
++        print("[acl_portal][Celery send_acl] Ошибка: Не удалось сформировать md файл.")
++        send_to_mattermost(
++            "[acl_portal][Celery send_acl] Ошибка: Не удалось сформировать md файл."
++        )
+     else:
+         file_md_abs = os.path.join(settings.BASE_DIR, md_file)
+         file_md_abs = os.path.normpath(file_md_abs)
+@@ -70,7 +90,7 @@ def send_acl(acl_id, gitlab_repo_url):
+                 PATH_OF_GIT_REPO=None,
+                 MDFILE=file_md_abs,
+                 taskid=acl_object.id,
+-                )
++            )
+             if g:
+                 g.pull()
+                 if g.clone():
+@@ -79,32 +99,51 @@ def send_acl(acl_id, gitlab_repo_url):
+                     if f:
+                         if g.addindex(f):
+                             if g.push(refspec="develop:develop"):
+-                                print(f"[acl_portal][Celery send_acl] acl({acl_object.id}) успешно отправлен в gitlab")
++                                print(
++                                    f"[acl_portal][Celery send_acl] acl({acl_object.id}) успешно отправлен в gitlab"
++                                )
+                             else:
+-                                print(f"[acl_portal][Celery send_acl] Не удалось отправить acl({acl_object.id}) в gitlab")
+-                                send_to_mattermost(f"[acl_portal][Celery send_acl] Не удалось отправить acl({acl_object.id}) в gitlab")
++                                print(
++                                    f"[acl_portal][Celery send_acl] Не удалось отправить acl({acl_object.id}) в gitlab"
++                                )
++                                send_to_mattermost(
++                                    f"[acl_portal][Celery send_acl] Не удалось отправить acl({acl_object.id}) в gitlab"
++                                )
+                 g.free()
+         else:
+-            print(f"[acl_portal][Celery send_acl] Ошибка: Сформированный md файл не существует. Путь:{file_md_abs}")
+-            send_to_mattermost(f"[acl_portal][Celery send_acl] Ошибка: Сформированный md файл не существует. Путь:{file_md_abs}")
+-    send_to_mattermost(f"[acl_portal][Celery send_acl] Задача успешно отработала")
++            print(
++                f"[acl_portal][Celery send_acl] Ошибка: Сформированный md файл не существует. Путь:{file_md_abs}"
++            )
++            send_to_mattermost(
++                f"[acl_portal][Celery send_acl] Ошибка: Сформированный md файл не существует. Путь:{file_md_abs}"
++            )
++    send_to_mattermost("[acl_portal][Celery send_acl] Задача успешно отработала")
+     return task_id
+ 
+ 
+ @shared_task
+ def check_acl_status():
+-    send_to_mattermost(f"[acl_portal][Celery check_acl_status] Cтарт задачи.")
++    send_to_mattermost("[acl_portal][Celery check_acl_status] Cтарт задачи.")
+     ACL = apps.get_model("accesslist", "ACL")
+-    acl_objects = ACL.objects.filter(status="JOB", taskid__isnull=False).exclude(taskid="")
+-    send_to_mattermost(f"[acl_portal][Celery check_acl_status] Cтарт проверки статуса заявок. Всего на проверке: {len(acl_objects)}.")
++    acl_objects = ACL.objects.filter(status="JOB", taskid__isnull=False).exclude(
++        taskid=""
++    )
++    send_to_mattermost(
++        f"[acl_portal][Celery check_acl_status] Cтарт проверки статуса заявок. Всего на проверке: {len(acl_objects)}."
++    )
+     for acl_object in acl_objects:
+         try:
+             check_acl_in_omni(acl_object)
+-            time.sleep(15)
+         except Exception as e:
+-            print(f"[acl_portal][Celery check_acl_status] Ошибка проверки статуса acl({acl_object.id}). Ошибка:{e}")
+-            send_to_mattermost(f"[acl_portal][Celery check_acl_status] Ошибка проверки статуса acl({acl_object.id}). Ошибка:{e}")
+-    send_to_mattermost(f"[acl_portal][Celery check_acl_status] Задача успешно отработала.")
++            print(
++                f"[acl_portal][Celery check_acl_status] Ошибка проверки статуса acl({acl_object.id}). Ошибка:{e}"
++            )
++            send_to_mattermost(
++                f"[acl_portal][Celery check_acl_status] Ошибка проверки статуса acl({acl_object.id}). Ошибка:{e}"
++            )
++    send_to_mattermost(
++        "[acl_portal][Celery check_acl_status] Задача успешно отработала."
++    )
+ 
+ 
+ @shared_task
+
+
+==== File: ownerlist/utils.py ====
+@@ -282,7 +282,7 @@ def request_handler(request, namespace=""):
+                         v = v.replace("\n\n", "\n")
+                     except Exception as e:
+                         if settings.DEBUG:
+-                            logger.error("{} {}".format(stack()[0][3], e))
++                            logger.error(f"{stack()[0][3]} {e}")
+                 if str_pattern in str(k):
+                     if namespace in LOCAL_STORAGE:
+                         LOCAL_STORAGE[namespace].append([v])
+@@ -323,7 +323,7 @@ def upload_file_handler(request, functionhandler=None):
+             UPLOAD_PATH, myfile.name
+         )  # bug with persone encode'
+         if settings.DEBUG:
+-            print("Upload file to: {}".format(uploaded_file_url))
++            print(f"Upload file to: {uploaded_file_url}")
+     else:
+         result["error"] = "Отсутствуют файлы для загрузки"
+         return result
+@@ -345,12 +345,12 @@ def upload_file_handler(request, functionhandler=None):
+     try:
+         os.remove(uploaded_file_url)
+         if settings.DEBUG:
+-            print("Удаление файла: {}".format(uploaded_file_url))
++            print(f"Удаление файла: {uploaded_file_url}")
+     finally:
+         uploaded_file_url = None
+     if isinstance(result, int):
+         if result > 0:
+-            return {"ok": "Добавлено новых значений: {}".format(result)}
++            return {"ok": f"Добавлено новых значений: {result}"}
+     else:
+         if isinstance(result, dict):
+             if "LOCAL_STORAGE" in result:
+@@ -400,9 +400,7 @@ def DeepSearch(request, string: str = ""):
+             messages.add_message(
+                 request,
+                 messages.INFO,
+-                "По запросу {} ничего не найдено, но мы нашли похожую информацию:".format(
+-                    string
+-                ),
++                f"По запросу {string} ничего не найдено, но мы нашли похожую информацию:",
+             )
+     if not result:
+         if re.match(r"[a-zA-Z0-9][a-zA-Z0-9-._]{1,61}", tmp):
+@@ -425,9 +423,7 @@ def DeepSearch(request, string: str = ""):
+                     messages.add_message(
+                         request,
+                         messages.INFO,
+-                        "По запросу {} ничего не найдено, но мы нашли похожую информацию:".format(
+-                            string
+-                        ),
++                        f"По запросу {string} ничего не найдено, но мы нашли похожую информацию:",
+                     )
+                 if not result:
+                     result = Iplist.objects.filter(comment__icontains=tmp)[:5]
+@@ -435,9 +431,7 @@ def DeepSearch(request, string: str = ""):
+                         messages.add_message(
+                             request,
+                             messages.INFO,
+-                            "По запросу {} ничего не найдено, но мы нашли похожую информацию:".format(
+-                                string
+-                            ),
++                            f"По запросу {string} ничего не найдено, но мы нашли похожую информацию:",
+                         )
+                     else:
+                         try:
+@@ -450,18 +444,14 @@ def DeepSearch(request, string: str = ""):
+                             messages.add_message(
+                                 request,
+                                 messages.INFO,
+-                                "По запросу {} ничего не найдено, но мы нашли похожую информацию:".format(
+-                                    string
+-                                ),
++                                f"По запросу {string} ничего не найдено, но мы нашли похожую информацию:",
+                             )
+ 
+     if re.match("[A-Za-zА-Яа-я\d\.]{3,20}", tmp):
+         tmp = tmp.replace("%", " ").replace("'", " ")
+         row_query = Acl.objects.filter(
+             id__in=RawSQL(
+-                "select id from accesslist_acl where acltext::text like '%%{}%%' limit 5".format(
+-                    tmp
+-                ),
++                f"select id from accesslist_acl where acltext::text like '%%{tmp}%%' limit 5",
+                 tmp,
+             )
+         )
+@@ -553,7 +543,7 @@ class ExtractDataXls:
+             self.current_page = self.rb.sheet_by_name(self.sheet_tag)
+             if self.current_page.nrows == 0:  # Count row
+                 if settings.DEBUG:
+-                    print("Страница {} пустая, пропущено...".format(self.current_page))
++                    print(f"Страница {self.current_page} пустая, пропущено...")
+                     return 0
+             if self.sheet_tag == "VLAN DESCRIPTION":
+                 result += self.ExtractVlanInfo()
+@@ -588,9 +578,7 @@ class ExtractDataXls:
+             else:
+                 if settings.DEBUG:
+                     print(
+-                        "Страница содержит другое количество колонок <> 4, {} анализируем...".format(
+-                            self.current_page.ncols
+-                        )
++                        f"Страница содержит другое количество колонок <> 4, {self.current_page.ncols} анализируем..."
+                     )
+                 result += self.PageStructAnalyzer(self.current_page)
+         return result
+@@ -682,7 +670,7 @@ class ExtractDataXls:
+                 for tag in tags:
+                     if (tag != "") and len(tag) > 1:
+                         if len(str(tag).split(".")) >= 3:  # If tag as Gateway's IP
+-                            tag = "Gateway: {}".format(tag)
++                            tag = f"Gateway: {tag}"
+                         tag_info, _ = self.Tags.objects.get_or_create(
+                             name=str(tag).rstrip()
+                         )
+@@ -696,7 +684,7 @@ class ExtractDataXls:
+                 tags.clear()
+ 
+         if settings.DEBUG:
+-            print("Добавленно {} новых записей в БД.".format(self.count_total))
++            print(f"Добавленно {self.count_total} новых записей в БД.")
+ 
+         return self.count_total
+ 
+@@ -755,9 +743,7 @@ class ExtractDataXls:
+                         else:
+                             if settings.DEBUG:
+                                 print(
+-                                    "********************Ошибка при анализе странице {}****************".format(
+-                                        self.sheet_tag
+-                                    )
++                                    f"********************Ошибка при анализе странице {self.sheet_tag}****************"
+                                 )
+                         return 0
+                     continue
+@@ -850,9 +836,7 @@ class ExtractDataXls:
+ 
+                     except DataError:
+                         print(
+-                            "- Ошибка данных: {} на странице: {}".format(
+-                                ip_addr, self.sheet_tag
+-                            )
++                            f"- Ошибка данных: {ip_addr} на странице: {self.sheet_tag}"
+                         )
+                         continue
+ 
+@@ -875,7 +859,7 @@ class ExtractDataXls:
+ 
+                         tags.clear()
+         if settings.DEBUG:
+-            print("Страница: {} записано: {}".format(self.sheet_tag, self.count_total))
++            print(f"Страница: {self.sheet_tag} записано: {self.count_total}")
+         return self.count_total
+ 
+     def PageStructAnalyzer(self, page, DEBUG=False) -> None:
+@@ -904,9 +888,7 @@ class ExtractDataXls:
+         #     print('')
+         if not (page.ncols > 0):  # and page.ncols < 6
+             print(
+-                "Page {} has been skipped, unknown amount col {}".format(
+-                    self.sheet_tag, page.ncols
+-                )
++                f"Page {self.sheet_tag} has been skipped, unknown amount col {page.ncols}"
+             )
+         else:
+             for idx_col in range(page.ncols):
+@@ -987,7 +969,7 @@ class ExtractDataXls:
+                                     continue
+ 
+                 max_v = max(col_stat, key=col_stat.get)
+-                if "Unknown" == max_v:
++                if max_v == "Unknown":
+                     continue
+                 elif max_v == "is_domain":
+                     col_index["domain"] = idx_col
+@@ -1116,7 +1098,7 @@ def make_doc(
+ 
+     def normalize_whitespace(data_set):
+         for data_idx, data in enumerate(data_set):
+-            if data == 'acl_traffic.html':
++            if data == "acl_traffic.html":
+                 for row_idx, row in enumerate(data_set[data]):
+                     if len(row) == 7:
+                         data_set[data][row_idx].append(" ")
+@@ -1148,7 +1130,7 @@ def make_doc(
+         data_set = normalize_whitespace(data_set)
+         gitlab_data_set = normalize_whitespace(gitlab_data_set)
+     else:
+-        print('Не удалось получить gitlab_data_set')
++        print("Не удалось получить gitlab_data_set")
+         gitlab_data_set = data_set
+ 
+     if request:
+@@ -1228,8 +1210,12 @@ def make_doc(
+                                 run.font.highlight_color = WD_COLOR_INDEX.GREEN
+                                 run.font.color.rgb = RGBColor(255, 255, 255)
+                         try:
+-                            strike_paragraph = table_tmp.cell(row_idx, 1).add_paragraph()
+-                            run_strike = strike_paragraph.add_run(str(gitlab_data_set.get(data, [])[row_idx]))
++                            strike_paragraph = table_tmp.cell(
++                                row_idx, 1
++                            ).add_paragraph()
++                            run_strike = strike_paragraph.add_run(
++                                str(gitlab_data_set.get(data, [])[row_idx])
++                            )
+                             run_strike.font.strike = True
+                             run_strike.font.highlight_color = WD_COLOR_INDEX.RED
+                             run_strike.font.color.rgb = RGBColor(255, 255, 255)
+@@ -1238,7 +1224,9 @@ def make_doc(
+                 except Exception as e:
+                     logger.error(e)
+             if notFoundCount > 0:
+-                logger.info(f"Не удалось найти {notFoundCount} строк(и) страницы Контакты в gitlab")
++                logger.info(
++                    f"Не удалось найти {notFoundCount} строк(и) страницы Контакты в gitlab"
++                )
+         else:
+             row_cnt = 0
+             if data not in data_set:
+@@ -1252,8 +1240,12 @@ def make_doc(
+                                     cell = table_tmp.cell(key, cell_idx)
+                                     cell.text = str(cell_val)
+                                     cell.paragraphs[0].runs[0].font.strike = True
+-                                    cell.paragraphs[0].runs[0].font.highlight_color = WD_COLOR_INDEX.RED
+-                                    cell.paragraphs[0].runs[0].font.color.rgb = RGBColor(255, 255, 255)
++                                    cell.paragraphs[0].runs[
++                                        0
++                                    ].font.highlight_color = WD_COLOR_INDEX.RED
++                                    cell.paragraphs[0].runs[0].font.color.rgb = (
++                                        RGBColor(255, 255, 255)
++                                    )
+                         except Exception as e:
+                             logger.error(f"[restore from gitlab data set error ] {e}")
+                 continue
+@@ -1272,8 +1264,12 @@ def make_doc(
+                             for cell_idx, cell_val in enumerate(value):
+                                 try:
+                                     cell = table_tmp.cell(key, cell_idx)
+-                                    cell.paragraphs[0].runs[0].font.highlight_color = WD_COLOR_INDEX.GREEN
+-                                    cell.paragraphs[0].runs[0].font.color.rgb = RGBColor(255, 255, 255)
++                                    cell.paragraphs[0].runs[
++                                        0
++                                    ].font.highlight_color = WD_COLOR_INDEX.GREEN
++                                    cell.paragraphs[0].runs[0].font.color.rgb = (
++                                        RGBColor(255, 255, 255)
++                                    )
+                                 except Exception as e:
+                                     logger.error(e)
+                         else:
+@@ -1281,8 +1277,12 @@ def make_doc(
+                                 for cell_idx, cell_val in enumerate(value):
+                                     try:
+                                         cell = table_tmp.cell(key, cell_idx)
+-                                        cell.paragraphs[0].runs[0].font.highlight_color = WD_COLOR_INDEX.GREEN
+-                                        cell.paragraphs[0].runs[0].font.color.rgb = RGBColor(255, 255, 255)
++                                        cell.paragraphs[0].runs[
++                                            0
++                                        ].font.highlight_color = WD_COLOR_INDEX.GREEN
++                                        cell.paragraphs[0].runs[0].font.color.rgb = (
++                                            RGBColor(255, 255, 255)
++                                        )
+                                     except Exception as e:
+                                         logger.error(e)
+                     row_cnt += 1
+@@ -1296,20 +1296,28 @@ def make_doc(
+             for row_idx, row_val in enumerate(gitlab_data_set[data], start=1):
+                 try:
+                     if row_val not in data_set[data]:
+-                        logger.info(f'На портале отсутствует строка: {row_val}')
+-                        if len(row_val) <= table_cols and any(cell_val for cell_val in row_val):  # check if row is not empty
++                        logger.info(f"На портале отсутствует строка: {row_val}")
++                        if len(row_val) <= table_cols and any(
++                            cell_val for cell_val in row_val
++                        ):  # check if row is not empty
+                             new_row = table_tmp.add_row()  # add a new row
+                             for cell_idx, cell_val in enumerate(row_val):
+-                                cell = new_row.cells[cell_idx]  # get the cell in the new row
++                                cell = new_row.cells[
++                                    cell_idx
++                                ]  # get the cell in the new row
+                                 cell.text = str(cell_val)  # set the cell text
+-                                cell.paragraphs[0].runs[0].font.highlight_color = WD_COLOR_INDEX.RED
+-                                cell.paragraphs[0].runs[0].font.color.rgb = RGBColor(255, 255, 255)
++                                cell.paragraphs[0].runs[
++                                    0
++                                ].font.highlight_color = WD_COLOR_INDEX.RED
++                                cell.paragraphs[0].runs[0].font.color.rgb = RGBColor(
++                                    255, 255, 255
++                                )
+                                 cell.paragraphs[0].runs[0].font.strike = True
+                 except Exception as e:
+                     logger.error(e)
+         # Очистка пустых строк
+         for row in table_tmp.rows:
+-            if all(cell.text.strip() == '' for cell in row.cells):
++            if all(cell.text.strip() == "" for cell in row.cells):
+                 table_tmp._tbl.remove(row._tr)
+ 
+     if is_in_session:
+@@ -1392,7 +1400,7 @@ def table(records, fields, headings=None, alignment=None, file=None):
+     elif len(extended_align) < num_columns:
+         extended_align += [("^", "<") for i in range[num_columns - len(extended_align)]]
+ 
+-    heading_align, cell_align = [x for x in zip(*extended_align)]
++    heading_align, cell_align = (x for x in zip(*extended_align, strict=False))
+ 
+     field_widths = [
+         len(max(column, key=len)) if len(column) > 0 else 0 for column in columns
+@@ -1403,20 +1411,28 @@ def table(records, fields, headings=None, alignment=None, file=None):
+     else:
+         heading_widths = field_widths
+ 
+-    column_widths = [max(x) for x in zip(field_widths, heading_widths)]
++    column_widths = [max(x) for x in zip(field_widths, heading_widths, strict=False)]
+ 
+     _ = " | ".join(
+-        ["{:" + a + str(w) + "}" for a, w in zip(heading_align, column_widths)]
++        [
++            "{:" + a + str(w) + "}"
++            for a, w in zip(heading_align, column_widths, strict=False)
++        ]
+     )
+     heading_template = "| " + _ + " |"
+-    _ = " | ".join(["{:" + a + str(w) + "}" for a, w in zip(cell_align, column_widths)])
++    _ = " | ".join(
++        [
++            "{:" + a + str(w) + "}"
++            for a, w in zip(cell_align, column_widths, strict=False)
++        ]
++    )
+ 
+     row_template = "| " + _ + " |"
+ 
+     _ = " | ".join(
+         [
+             left_rule[a] + "-" * (w - 2) + right_rule[a]
+-            for a, w in zip(cell_align, column_widths)
++            for a, w in zip(cell_align, column_widths, strict=False)
+         ]
+     )
+     ruling = "| " + _ + " |"
+@@ -1425,17 +1441,19 @@ def table(records, fields, headings=None, alignment=None, file=None):
+         if headings:
+             file.write(heading_template.format(*headings).rstrip() + "\n")
+         file.write(ruling.rstrip() + "\n")
+-        for row in zip(*columns):
++        for row in zip(*columns, strict=False):
+             file.write(row_template.format(*row).rstrip() + "\n")
+         file.write("\n")
+         file.write("\n")
+ 
+ 
+ def create_markdown_file(request, json_data, filename, fileuuid=""):
+-    """ Создает markdown-файл из JSON-данных """
++    """Создает markdown-файл из JSON-данных"""
+     print("[create_markdown_file] Create md")
+     if request:
+-        update_callback_status(request, fileuuid, "git_upload_status", "Создание md файла")
++        update_callback_status(
++            request, fileuuid, "git_upload_status", "Создание md файла"
++        )
+ 
+     try:
+         file_path = os.path.join(BASE_DIR, f"static/md/{filename}.md")
+@@ -1455,19 +1473,21 @@ def create_markdown_file(request, json_data, filename, fileuuid=""):
+         md_handle_error(filename, fileuuid, e)
+         return False
+     if request:
+-        update_callback_status(request, fileuuid, "git_upload_status", "The md file Created")
+-    return f"/static/md/{filename}.md"
++        update_callback_status(
++            request, fileuuid, "git_upload_status", "The md file Created"
++        )
++    return f"static/md/{filename}.md"
+ 
+ 
+ def md_write_acl_create_info(file, data):
+     logger.debug("[MakeMarkDown] acl_create_info")
+     print("[MakeMarkDown] acl_create_info")
+-    file.write("## {}\n".format(data[4]))
++    file.write(f"## {data[4]}\n")
+     file.write("##### Описание доступа к ресурсам\n")
+ 
+     if data:
+         fields = [0, 1]
+-        tmp = zip(contact_table, data)
++        tmp = zip(contact_table, data, strict=False)
+         table(
+             records=tmp,
+             fields=fields,
+@@ -1478,7 +1498,9 @@ def md_write_acl_create_info(file, data):
+ 
+ 
+ def md_write_acl_internal_resources(file, data):
+-    logger.debug("[write_acl_internal_resources_to_markdown] Запись внутренних ресурсов")
++    logger.debug(
++        "[write_acl_internal_resources_to_markdown] Запись внутренних ресурсов"
++    )
+     print("[write_acl_internal_resources_to_markdown] Запись внутренних ресурсов")
+ 
+     file.write("\n##### Список внутренних ресурсов (СГ АльфаСтрахование)\n")
+@@ -1583,14 +1605,12 @@ class GitWorker:
+                     request,
+                     taskid,
+                     "git_upload_status",
+-                    "Ошибка при инициализации Repo: {}".format(PATH_OF_GIT_REPO),
++                    f"Ошибка при инициализации Repo: {PATH_OF_GIT_REPO}",
+                     0,
+                 )
+                 return False
+             if settings.DEBUG:
+-                logger.debug(
+-                    "Инициализация GIT репозитория {}".format(PATH_OF_GIT_REPO)
+-                )
++                logger.debug(f"Инициализация GIT репозитория {PATH_OF_GIT_REPO}")
+         else:
+             tmp = os.path.join(tempfile.gettempdir(), uid)
+             try:
+@@ -1603,15 +1623,13 @@ class GitWorker:
+                     request,
+                     taskid,
+                     "git_upload_status",
+-                    "Ошибка при инициализации Repo: {}".format(tmp),
++                    f"Ошибка при инициализации Repo: {tmp}",
+                     0,
+                 )
+                 return False
+             if settings.DEBUG:
+                 logger.debug(
+-                    "Инициализация GIT репозитория {}".format(
+-                        os.path.join(tempfile.gettempdir(), uid)
+-                    )
++                    f"Инициализация GIT репозитория {os.path.join(tempfile.gettempdir(), uid)}"
+                 )
+ 
+         self.request = request
+@@ -1657,9 +1675,7 @@ class GitWorker:
+             )
+             # self.request.session['git_upload_status'].append({'status': "Создание временой папки: {}".format(self.PATH_OF_GIT_REPO)})
+             if settings.DEBUG:
+-                logger.debug(
+-                    "Создание временой папки: {}".format(self.PATH_OF_GIT_REPO)
+-                )
++                logger.debug(f"Создание временой папки: {self.PATH_OF_GIT_REPO}")
+         # else:
+         # os.path.join(BASE_DIR, 'upload')
+         if not os.path.exists(MDFILE):
+@@ -1667,7 +1683,7 @@ class GitWorker:
+         else:
+             self.MDFILE = MDFILE
+         if settings.DEBUG:
+-            logger.debug("Путь к md файлу: {}".format(self.MDFILE))
++            logger.debug(f"Путь к md файлу: {self.MDFILE}")
+ 
+     def free(self):
+         for i in range(1, 3):
+@@ -1729,10 +1745,10 @@ class GitWorker:
+             self.request,
+             self.taskid,
+             "git_upload_status",
+-            "Скачано: {} файлов".format(len(self.repo.index.entries)),
++            f"Скачано: {len(self.repo.index.entries)} файлов",
+         )
+         if settings.DEBUG:
+-            logger.debug("Скачано: {} файлов".format(len(self.repo.index.entries)))
++            logger.debug(f"Скачано: {len(self.repo.index.entries)} файлов")
+         return True
+ 
+     def fetch(self):
+@@ -1782,9 +1798,7 @@ class GitWorker:
+                 # self.request.session['git_upload_status'].append({'error': "Ошибка при копировании файла в проект: {}".format(dfile)})
+                 if settings.DEBUG:
+                     logger.debug(
+-                        "Ошибка при копировании файла {} в проект: {}".format(
+-                            sfile, dfile
+-                        )
++                        f"Ошибка при копировании файла {sfile} в проект: {dfile}"
+                     )
+                 return 0
+             update_callback_status(
+@@ -1795,7 +1809,7 @@ class GitWorker:
+             )
+             # self.request.session['git_upload_status'].append({'status': "Копирование файла в проект: {}".format(dfile)})
+             if settings.DEBUG:
+-                logger.debug("Копирование файла в проект: {}".format(dfile))
++                logger.debug(f"Копирование файла в проект: {dfile}")
+         except Exception:
+             # self.request.session['git_upload_status'].append({'error': "Возникла ошибка при копировании md файла в папку проекта"})
+             update_callback_status(
+@@ -1839,7 +1853,7 @@ class GitWorker:
+                 0,
+             )
+             if settings.DEBUG:
+-                logger.error("Ошибка при локальном коммите: {}".format(e))
++                logger.error(f"Ошибка при локальном коммите: {e}")
+             return False
+         return True
+ 
+@@ -1988,7 +2002,7 @@ def ExtractDataDns(uploaded_file_url) -> int:
+                         for tmp in buff[cname]:
+                             s = tmp.split()
+                             if line[3] == s[0]:
+-                                owner = "{} CNAME {}".format(owner, line[3])
++                                owner = f"{owner} CNAME {line[3]}"
+                                 if len(s) >= 5:
+                                     line[3] = s[4]
+                                 else:
+@@ -1998,7 +2012,7 @@ def ExtractDataDns(uploaded_file_url) -> int:
+                         try:
+                             r = socket.gethostbyname(line[3])
+                             if r:
+-                                owner = "{} CNAME {}".format(owner, line[3])
++                                owner = f"{owner} CNAME {line[3]}"
+                                 line[3] = r
+                         except:
+                             pass
+@@ -2039,7 +2053,7 @@ def ExtractDataDns(uploaded_file_url) -> int:
+ 
+                 except DataError as e:
+                     if settings.DEBUG:
+-                        print("- Ошибка данных: {}".format(e))
++                        print(f"- Ошибка данных: {e}")
+ 
+                 if created3:
+                     ip_info.tags.add(tag_info)
+@@ -2088,8 +2102,8 @@ def ClearSessionMeta(request=None):
+ 
+ 
+ def MakeTemporaryToken():
+-    s = "{} ACL token {}".format(random.randrange(999), datetime.datetime.now())
+-    return "{}".format(hashlib.md5(s.encode()).hexdigest()[:10])
++    s = f"{random.randrange(999)} ACL token {datetime.datetime.now()}"
++    return f"{hashlib.md5(s.encode()).hexdigest()[:10]}"
+ 
+ 
+ def compare_first_column(doc1, doc2):
+@@ -2103,7 +2117,7 @@ def compare_first_column(doc1, doc2):
+ 
+ 
+ def compare_table_headers(doc1, doc2):
+-    for table1, table2 in zip(doc1.tables[1:], doc2.tables[1:]):
++    for table1, table2 in zip(doc1.tables[1:], doc2.tables[1:], strict=False):
+         headers1 = [cell.text for cell in table1.rows[0].cells]
+         headers2 = [cell.text for cell in table2.rows[0].cells]
+         if headers1 != headers2:
+@@ -2201,7 +2215,7 @@ def ParseDocx(file):
+         if "is not a Word" in str(e):
+             result["error"] = "Ошибка при загрузке старого формата doc файла"
+         else:
+-            result["error"] = "{}".format(e)
++            result["error"] = f"{e}"
+     except opc.exceptions.PackageNotFoundError:
+         result["error"] = "Ошибка, вероятно это не docx файл"
+     except Exception as e:
+@@ -2212,9 +2226,9 @@ def ParseDocx(file):
+             result["LOCAL_STORAGE"] = LOCAL_STORAGE
+         result["META"] = {}
+         if FIX_STATISTICS > 0:
+-            result["META"]["fixed"] = "{}".format(FIX_STATISTICS)
++            result["META"]["fixed"] = f"{FIX_STATISTICS}"
+         if SKIP__STATISTICS > 0:
+-            result["META"]["skipped"] = "{}".format(SKIP__STATISTICS)
++            result["META"]["skipped"] = f"{SKIP__STATISTICS}"
+     return result
+ 
+ 
+@@ -2273,27 +2287,25 @@ def send_onmitracker(
+         )
+     except Exception as e:
+         logger.warning(f"[SEND_TO_MATTERMOST EXCEPTION] {e}")
+-    bodyNotEncoded = """<?xml version="1.0" encoding="utf-8"?>
++    bodyNotEncoded = f"""<?xml version="1.0" encoding="utf-8"?>
+                 <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:s="http://www.w3.org/2001/XMLSchema" xmlns:tns="http://www.omninet.de/OtWebSvc/v1">
+         <soap:Body>
+             <tns:InvokeScript>
+                <tns:Script name="OmniAPI" runAt="Server">
+                     <tns:Parameters>
+                         <tns:StringVal name='strFunction'>CreateIncidentFromTemplateWithAttachmentAndExternalNumber</tns:StringVal>
+-                        <tns:StringVal name='strEMail'>{}</tns:StringVal>
+-                        <tns:StringVal name='strTitle'>{}</tns:StringVal>
+-                        <tns:StringVal name='strDescription'>{}</tns:StringVal>
++                        <tns:StringVal name='strEMail'>{sender}</tns:StringVal>
++                        <tns:StringVal name='strTitle'>{title}</tns:StringVal>
++                        <tns:StringVal name='strDescription'>{text}</tns:StringVal>
+                         <tns:StringVal name='strTemplateCode'>SH0458</tns:StringVal>
+-                        <tns:StringVal name='strExternalNumber'>{}</tns:StringVal>
+-                        <tns:StringVal name='strAttachmentPath'>{}</tns:StringVal>
++                        <tns:StringVal name='strExternalNumber'>{str(uid)}</tns:StringVal>
++                        <tns:StringVal name='strAttachmentPath'>{attach}</tns:StringVal>
+                     </tns:Parameters>
+                 </tns:Script>
+             </tns:InvokeScript>
+         </soap:Body>
+         </soap:Envelope>
+-        """.format(
+-        sender, title, text, str(uid), attach
+-    )
++        """
+ 
+     body = bodyNotEncoded.encode("utf-8")
+     logger.debug("BODY NOT ENCODED:" + str(bodyNotEncoded))
+@@ -2302,10 +2314,7 @@ def send_onmitracker(
+ 
+     try:
+         auth = HttpNtlmAuth(
+-            "{}\\{}".format(
+-                settings.LDAP_AUTH_CONNECTION_DOMAIN,
+-                settings.LDAP_AUTH_CONNECTION_USERNAME,
+-            ),
++            f"{settings.LDAP_AUTH_CONNECTION_DOMAIN}\\{settings.LDAP_AUTH_CONNECTION_USERNAME}",
+             settings.LDAP_AUTH_CONNECTION_PASSWORD,
+         )
+     except Exception as e:
+@@ -2315,9 +2324,7 @@ def send_onmitracker(
+     for i in range(settings.ATTEMPS):
+         try:
+             # time.sleep(5)
+-            logger.debug(
+-                "[{}] Отправка запроса в {}".format(i, settings.OMNITRACKER_URL)
+-            )
++            logger.debug(f"[{i}] Отправка запроса в {settings.OMNITRACKER_URL}")
+             logger.debug("[TRACE] Тело запроса: " + body.decode())
+             res = requests.post(
+                 settings.OMNITRACKER_URL,
+@@ -2358,9 +2365,7 @@ def send_onmitracker(
+                             )
+                             if settings.DEBUG:
+                                 logger.error(
+-                                    "[TRACE] Сервер omni вернул неправильный ответ {} ".format(
+-                                        res.text
+-                                    )
++                                    f"[TRACE] Сервер omni вернул неправильный ответ {res.text} "
+                                 )
+ 
+                             result = 0
+@@ -2370,10 +2375,7 @@ def send_onmitracker(
+                     if "requests_ntlm" in sys.modules:
+                         try:
+                             auth = HttpNtlmAuth(
+-                                "{}\\{}".format(
+-                                    settings.LDAP_AUTH_CONNECTION_DOMAIN,
+-                                    settings.LDAP_AUTH_CONNECTION_USERNAME,
+-                                ),
++                                f"{settings.LDAP_AUTH_CONNECTION_DOMAIN}\\{settings.LDAP_AUTH_CONNECTION_USERNAME}",
+                                 settings.LDAP_AUTH_CONNECTION_PASSWORD,
+                             )
+                         except Exception as e:
+@@ -2387,7 +2389,7 @@ def send_onmitracker(
+                     request,
+                     uid,
+                     "omni_email_status",
+-                    "Повторная отправка сообщения в SD ({})".format(i),
++                    f"Повторная отправка сообщения в SD ({i})",
+                     0,
+                 )
+                 sleep(i)
+@@ -2400,15 +2402,13 @@ def send_onmitracker(
+                 f"Ссылка на ACL: https://acl.vesta.ru/acl/info/{str(uid)}",
+             )
+             logger.error(
+-                "[TRACE] Подключение не удалось по таймауту к {}".format(
+-                    settings.OMNITRACKER_URL
+-                )
++                f"[TRACE] Подключение не удалось по таймауту к {settings.OMNITRACKER_URL}"
+             )
+             update_callback_status(
+                 request,
+                 uid,
+                 "omni_email_status",
+-                "Повторная отправка сообщения в SD ({})".format(i),
++                f"Повторная отправка сообщения в SD ({i})",
+                 1,
+             )
+         except requests.ConnectionError:
+@@ -2419,14 +2419,12 @@ def send_onmitracker(
+                 f"OMNITRACKER_URL: {settings.OMNITRACKER_URL}",
+                 f"Ссылка на ACL: https://acl.vesta.ru/acl/info/{str(uid)}",
+             )
+-            logger.error(
+-                "[TRACE] Сервис {} не отвечает".format(settings.OMNITRACKER_URL)
+-            )
++            logger.error(f"[TRACE] Сервис {settings.OMNITRACKER_URL} не отвечает")
+             update_callback_status(
+                 request,
+                 uid,
+                 "omni_email_status",
+-                "Повторная отправка сообщения в SD ({})".format(i),
++                f"Повторная отправка сообщения в SD ({i})",
+                 1,
+             )
+ 
+@@ -2441,7 +2439,7 @@ def send_onmitracker(
+                 request,
+                 uid,
+                 "omni_email_status",
+-                "Повторная отправка сообщения в SD ({})".format(i),
++                f"Повторная отправка сообщения в SD ({i})",
+                 1,
+             )
+             logger.error("[Omni request] " + str(e))
+@@ -2456,67 +2454,68 @@ def send_onmitracker(
+ 
+ 
+ def omni_check_status(id=None, proxy=None):
+-    body = """<?xml version="1.0" encoding="utf-8"?>
++    body = f"""<?xml version="1.0" encoding="utf-8"?>
+ <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:s="http://www.w3.org/2001/XMLSchema" xmlns:tns="http://www.omninet.de/OtWebSvc/v1">
+ <soap:Body>
+    <tns:InvokeScript>
+      <tns:Script name="OmniAPI" runAt="Server">
+                                <tns:Parameters>
+                                                <tns:StringVal name="strFunction">GetIncStateByNumber</tns:StringVal>
+-                                               <tns:LongIntVal name="lngNumber">{}</tns:LongIntVal>
++                                               <tns:LongIntVal name="lngNumber">{id}</tns:LongIntVal>
+                               </tns:Parameters>
+     </tns:Script>
+    </tns:InvokeScript>
+ </soap:Body>
+ </soap:Envelope>
+-""".format(
+-        id
+-    ).encode(
+-        "utf-8"
+-    )
+-    result = ""
++""".encode()
+ 
++    result = ""
++    max_retries = 3
+     try:
+         auth = HttpNtlmAuth(
+-            "{}\\{}".format(
+-                settings.LDAP_AUTH_CONNECTION_DOMAIN,
+-                settings.LDAP_AUTH_CONNECTION_USERNAME,
+-            ),
++            f"{settings.LDAP_AUTH_CONNECTION_DOMAIN}\\{settings.LDAP_AUTH_CONNECTION_USERNAME}",
+             settings.LDAP_AUTH_CONNECTION_PASSWORD,
+         )
+     except Exception as e:
+         logger.error(f"Ошибка авторизации LDAP: {e}")
+         print(f"Ошибка авторизации LDAP: {e}")
+ 
+-    try:
+-        r = requests.post(
+-            settings.OMNITRACKER_URL,
+-            body,
+-            headers=OMNI_HTTP_HEADERS,
+-            proxies=proxy,
+-            auth=auth,
+-            timeout=1,
+-        )
+-        if r.status_code == 200:
+-            try:
+-                result = r.text
+-                if result and len(result) > 3:
+-                    result = result.split('strResponse">')
+-                    result = result[1].split("</")[0]
+-                return OMNI_ACL_STATUS.get(result), OMNI_HTTP_STATUS.get(result)
+-            except Exception as e:
+-                logger.error("[Check status] " + str(e))
+-                if settings.DEBUG:
+-                    print(e)
++    for attempt in range(max_retries):
++        try:
++            r = requests.post(
++                settings.OMNITRACKER_URL,
++                body,
++                headers=OMNI_HTTP_HEADERS,
++                proxies=proxy,
++                auth=auth,
++                timeout=1,
++            )
++            if r.status_code == 200:
++                try:
++                    result = r.text
++                    if result and len(result) > 3:
++                        result = result.split('strResponse">')
++                        result = result[1].split("</")[0]
++                    return OMNI_ACL_STATUS.get(result), OMNI_HTTP_STATUS.get(result)
++                except Exception as e:
++                    logger.error("[Check status] " + str(e))
++                    if settings.DEBUG:
++                        print(e)
++                    return None, None
++            else:
+                 return None, None
+-        else:
+-            return None, None
+ 
+-    except Exception as e:
+-        logger.info(f"Ошибка: {e}")
+-        send_to_mattermost(f"[omni_check_status] Ошибка: {e}")
+-        print(f"[omni_check_status] Ошибка: {e}")
+-        return None, None
++        except Exception as e:
++            logger.info(f"Ошибка на попытке {attempt + 1} ID:{id} - {e}")
++            send_to_mattermost(
++                f"[omni_check_status] Ошибка на попытке {attempt + 1} ID:{id} - {e}"
++            )
++            print(f"[omni_check_status] Ошибка на попытке {attempt + 1} ID:{id} - {e}")
++
++            if attempt < max_retries - 1:
++                time.sleep(15)
++            else:
++                return None, None
+ 
+ 
+ def SendMessageToApprove(acl_id, acl_owner, user, token=""):
+@@ -2546,15 +2545,19 @@ def SendMessageToApprove(acl_id, acl_owner, user, token=""):
+     </html>
+                                     """ % (
+         acl_owner,
+-        "https://acl.vesta.ru/acl/pending/{}/?token={}".format(acl_id, token),
++        f"https://acl.vesta.ru/acl/pending/{acl_id}/?token={token}",
+     )
+ 
+-    e = EmailMessage(subject='Согласование обращения '+str(user.username), body=EMAIL_APPROVE, from_email='acl@alfastrah.ru',
+-                     to=[user.email])
++    e = EmailMessage(
++        subject="Согласование обращения " + str(user.username),
++        body=EMAIL_APPROVE,
++        from_email="acl@alfastrah.ru",
++        to=[user.email],
++    )
+     e.content_subtype = "html"
+     e.send(fail_silently=settings.DEBUG)
+     if settings.DEBUG:
+-        print("https://acl.vesta.ru/acl/pending/{}/?token={}".format(acl_id, token))
++        print(f"https://acl.vesta.ru/acl/pending/{acl_id}/?token={token}")
+ 
+ 
+ def send_to_mattermost(*messages):
+@@ -2720,8 +2723,9 @@ def convert_md_to_dict(md_content: str):
+     except Exception as e:
+         logger.error(e)
+ 
++
+ def acl_sending_retry_checking(acl_object):
+-    '''Проверяет acl в omnitracker на наличие заявки'''
++    """Проверяет acl в omnitracker на наличие заявки"""
+     acl_taskid = acl_object.taskid
+     acl_status = acl_object.status
+ 
+@@ -2731,10 +2735,10 @@ def acl_sending_retry_checking(acl_object):
+         omni_acl_status, omni_http_status = omni_check_status(omni_taskid)
+         if acl_taskid != omni_taskid:
+             acl_object.taskid = str(omni_taskid)
+-            acl_object.save(update_fields=['taskid'])
++            acl_object.save(update_fields=["taskid"])
+         if acl_status != omni_acl_status and omni_acl_status in ["CMP", "JOB", "CNL"]:
+             acl_object.status = omni_acl_status
+-            acl_object.save(update_fields=['status'])
++            acl_object.save(update_fields=["status"])
+         return omni_taskid
+     else:
+         return None
+@@ -2743,30 +2747,23 @@ def acl_sending_retry_checking(acl_object):
+ def check_taskId_by_uuid(uuid, proxy=None):
+     """Функция проверяет номер SD по номеру UUID в omnitracker"""
+ 
+-    body = """<?xml version="1.0" encoding="utf-8"?>
++    body = f"""<?xml version="1.0" encoding="utf-8"?>
+     <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:s="http://www.w3.org/2001/XMLSchema" xmlns:tns="http://www.omninet.de/OtWebSvc/v1">
+       <soap:Body>
+         <tns:InvokeScript>
+           <tns:Script name="OmniAPI" runAt="Server">
+             <tns:Parameters>
+               <tns:StringVal name="strFunction">GetIncInfoByExternalNumber</tns:StringVal>
+-              <tns:StringVal name="strExternalNumber">{}</tns:StringVal>
++              <tns:StringVal name="strExternalNumber">{str(uuid)}</tns:StringVal>
+             </tns:Parameters>
+           </tns:Script>
+         </tns:InvokeScript>
+       </soap:Body>
+     </soap:Envelope>
+-    """.format(
+-        str(uuid)
+-    ).encode(
+-        "utf-8"
+-    )
++    """.encode()
+     try:
+         auth = HttpNtlmAuth(
+-            "{}\\{}".format(
+-                settings.LDAP_AUTH_CONNECTION_DOMAIN,
+-                settings.LDAP_AUTH_CONNECTION_USERNAME,
+-            ),
++            f"{settings.LDAP_AUTH_CONNECTION_DOMAIN}\\{settings.LDAP_AUTH_CONNECTION_USERNAME}",
+             settings.LDAP_AUTH_CONNECTION_PASSWORD,
+         )
+     except Exception as e:
+@@ -2872,43 +2869,46 @@ def get_project_desc_from_git(session=None, project_id=""):
+ 
+ 
+ def celery_send_omnitracker(sender, title, text, attach, uuid=None):
+-    bodyNotEncoded = """<?xml version="1.0" encoding="utf-8"?>
++    bodyNotEncoded = f"""<?xml version="1.0" encoding="utf-8"?>
+                 <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:s="http://www.w3.org/2001/XMLSchema" xmlns:tns="http://www.omninet.de/OtWebSvc/v1">
+         <soap:Body>
+             <tns:InvokeScript>
+                <tns:Script name="OmniAPI" runAt="Server">
+                     <tns:Parameters>
+                         <tns:StringVal name='strFunction'>CreateIncidentFromTemplateWithAttachmentAndExternalNumber</tns:StringVal>
+-                        <tns:StringVal name='strEMail'>{}</tns:StringVal>
+-                        <tns:StringVal name='strTitle'>{}</tns:StringVal>
+-                        <tns:StringVal name='strDescription'>{}</tns:StringVal>
++                        <tns:StringVal name='strEMail'>{sender}</tns:StringVal>
++                        <tns:StringVal name='strTitle'>{title}</tns:StringVal>
++                        <tns:StringVal name='strDescription'>{text}</tns:StringVal>
+                         <tns:StringVal name='strTemplateCode'>SH0458</tns:StringVal>
+-                        <tns:StringVal name='strExternalNumber'>{}</tns:StringVal>
+-                        <tns:StringVal name='strAttachmentPath'>{}</tns:StringVal>
++                        <tns:StringVal name='strExternalNumber'>{str(uuid)}</tns:StringVal>
++                        <tns:StringVal name='strAttachmentPath'>{attach}</tns:StringVal>
+                     </tns:Parameters>
+                 </tns:Script>
+             </tns:InvokeScript>
+         </soap:Body>
+         </soap:Envelope>
+-        """.format(sender, title, text, str(uuid), attach)
++        """
+ 
+     body = bodyNotEncoded.encode("utf-8")
+ 
+     try:
+-        auth = HttpNtlmAuth("{}\\{}".format(settings.LDAP_AUTH_CONNECTION_DOMAIN, settings.LDAP_AUTH_CONNECTION_USERNAME),
+-                            settings.LDAP_AUTH_CONNECTION_PASSWORD)
++        auth = HttpNtlmAuth(
++            f"{settings.LDAP_AUTH_CONNECTION_DOMAIN}\\{settings.LDAP_AUTH_CONNECTION_USERNAME}",
++            settings.LDAP_AUTH_CONNECTION_PASSWORD,
++        )
+     except Exception as e:
+         print(f"Ошибка авторизации LDAP: {e}")
+     result = None
+ 
+     for i in range(settings.ATTEMPS):
+         try:
+-            res = requests.post(settings.OMNITRACKER_URL,
+-                                body,
+-                                headers=OMNI_HTTP_HEADERS,
+-                                timeout=settings.TIMEOUT,
+-                                auth=auth,
+-                                )
++            res = requests.post(
++                settings.OMNITRACKER_URL,
++                body,
++                headers=OMNI_HTTP_HEADERS,
++                timeout=settings.TIMEOUT,
++                auth=auth,
++            )
+ 
+             if res and res.status_code == 200:
+                 result = res.text
+@@ -2931,9 +2931,10 @@ def celery_send_omnitracker(sender, title, text, attach, uuid=None):
+             else:
+                 if res.status_code == 401 and not auth:
+                     try:
+-                        auth = HttpNtlmAuth(f"{settings.LDAP_AUTH_CONNECTION_DOMAIN}\\{settings.LDAP_AUTH_CONNECTION_USERNAME}",
+-                                            settings.LDAP_AUTH_CONNECTION_PASSWORD,
+-                                            )
++                        auth = HttpNtlmAuth(
++                            f"{settings.LDAP_AUTH_CONNECTION_DOMAIN}\\{settings.LDAP_AUTH_CONNECTION_USERNAME}",
++                            settings.LDAP_AUTH_CONNECTION_PASSWORD,
++                        )
+                     except Exception as e:
+                         send_to_mattermost(f"Ошибка авторизации LDAP: {e}")
+                 if i >= settings.ATTEMPS:
+@@ -2965,7 +2966,8 @@ def celery_send_omnitracker(sender, title, text, attach, uuid=None):
+ 
+ 
+ def check_acl_in_omni(acl_object):
+-    """ Проверяет acl в omnitracker на наличие заявки """
++    """Проверяет acl в omnitracker на наличие заявки"""
++
+     acl_taskid = acl_object.taskid
+     if acl_taskid:
+         acl_status = acl_object.status
+
+

@@ -1,0 +1,203 @@
+==== File: .gitlab-ci.yml ====
+@@ -35,10 +35,10 @@ lint_code:
+     - tar -czf $backup_archive.tar.gz $SITE_ROOT
+     - ls -las $CI_PROJECT_DIR
+     - cp -r $CI_PROJECT_DIR/* $SITE_ROOT
+-    - python -m pip config set global.index https://nx.alfastrah.ru/repository/pypi-proxy/pypi
+-    - python -m pip config set global.index-url https://nx.alfastrah.ru/repository/pypi-proxy/simple
+-    - python -m pip config set global.trusted-host nx.alfastrah.ru
+-    - python -m pip install --upgrade -r requirements.txt
++    - sudo python -m pip config set global.index https://nx.alfastrah.ru/repository/pypi-proxy/pypi
++    - sudo python -m pip config set global.index-url https://nx.alfastrah.ru/repository/pypi-proxy/simple
++    - sudo python -m pip config set global.trusted-host nx.alfastrah.ru
++    - sudo python -m pip install --upgrade -r requirements.txt
+   allow_failure: true
+   artifacts:
+     reports:
+
+
+==== File: accesslist/urls.py ====
+@@ -1,5 +1,4 @@
+ from django.urls import path, re_path, include
+-from django.conf.urls import url
+ from .views import *
+ 
+ urlpatterns = [
+@@ -10,57 +9,57 @@ urlpatterns = [
+     path("taskstatus/<str:taskid>/", taskstatus, name='taskstatus_urls'),
+ 
+     re_path("info/", include([
+-        url(r"^$", AclCreate.as_view(), name="aclcreate_urls"),
+-        url(r"^(?P<acl_id>[0-9a-f-]+)/$", AclCreate.as_view(), name="aclcreate_urls"),
+-        url(r"^(?P<acl_id>[0-9a-f-]+)/new/$", AclCreate.as_view(), name="aclcreate_new_urls"),
++        re_path(r"^$", AclCreate.as_view(), name="aclcreate_urls"),
++        re_path(r"^(?P<acl_id>[0-9a-f-]+)/$", AclCreate.as_view(), name="aclcreate_urls"),
++        re_path(r"^(?P<acl_id>[0-9a-f-]+)/new/$", AclCreate.as_view(), name="aclcreate_new_urls"),
+     ])),
+ 
+     re_path("internal/", include([
+-        url(r"^$", AclCreate.as_view(), name="aclinternal_urls"),
+-        url(r"^(?P<acl_id>[0-9a-f-]+)/$", AclCreate_internal.as_view(), name="aclinternal_urls"),
+-        url(r"^(?P<acl_id>[0-9a-f-]+)/new/$", AclCreate_internal.as_view(), name="aclinternal_urls"),
++        re_path(r"^$", AclCreate.as_view(), name="aclinternal_urls"),
++        re_path(r"^(?P<acl_id>[0-9a-f-]+)/$", AclCreate_internal.as_view(), name="aclinternal_urls"),
++        re_path(r"^(?P<acl_id>[0-9a-f-]+)/new/$", AclCreate_internal.as_view(), name="aclinternal_urls"),
+     ])),
+ 
+     re_path("external/", include([
+-        url(r"^$", AclCreate_external.as_view(), name="aclexternal_urls"),
+-        url(r"^(?P<acl_id>[0-9a-f-]+)/$", AclCreate_external.as_view(), name="aclexternal_urls"),
+-        url(r"^(?P<acl_id>[0-9a-f-]+)/new/$", AclCreate_external.as_view(), name="aclexternal_urls"),
++        re_path(r"^$", AclCreate_external.as_view(), name="aclexternal_urls"),
++        re_path(r"^(?P<acl_id>[0-9a-f-]+)/$", AclCreate_external.as_view(), name="aclexternal_urls"),
++        re_path(r"^(?P<acl_id>[0-9a-f-]+)/new/$", AclCreate_external.as_view(), name="aclexternal_urls"),
+     ])),
+ 
+     re_path("traffic/", include([
+-        url(r"^$", AclCreate_traffic.as_view(), name="acltraffic_urls"),
+-        url(r"^(?P<acl_id>[0-9a-f-]+)/$", AclCreate_traffic.as_view(), name="acltraffic_urls"),
+-        url(r"^(?P<acl_id>[0-9a-f-]+)/new/$", AclCreate_traffic.as_view(), name="acltraffic_urls"),
++        re_path(r"^$", AclCreate_traffic.as_view(), name="acltraffic_urls"),
++        re_path(r"^(?P<acl_id>[0-9a-f-]+)/$", AclCreate_traffic.as_view(), name="acltraffic_urls"),
++        re_path(r"^(?P<acl_id>[0-9a-f-]+)/new/$", AclCreate_traffic.as_view(), name="acltraffic_urls"),
+     ])),
+ 
+     re_path("dmz/", include([
+-        url(r"^$", AclCreate_dmz.as_view(), name="acldmz_urls"),
+-        url(r"^(?P<acl_id>[0-9a-f-]+)/$", AclCreate_dmz.as_view(), name="acldmz_urls"),
+-        url(r"^(?P<acl_id>[0-9a-f-]+)/new/$", AclCreate_dmz.as_view(), name="acldmz_urls"),
++        re_path(r"^$", AclCreate_dmz.as_view(), name="acldmz_urls"),
++        re_path(r"^(?P<acl_id>[0-9a-f-]+)/$", AclCreate_dmz.as_view(), name="acldmz_urls"),
++        re_path(r"^(?P<acl_id>[0-9a-f-]+)/new/$", AclCreate_dmz.as_view(), name="acldmz_urls"),
+     ])),
+ 
+     re_path("overview/", include([
+-        url(r"^$", AclCreate_dmz.as_view(), name="acloverview_urls"),
+-        url(r"^(?P<acl_id>[0-9a-f-]+)/$", AclOver.as_view(), name="acloverview_urls"),
+-        url(r"^(?P<acl_id>[0-9a-f-]+)/new/$", AclOver.as_view(), name="acloverview_urls"),
++        re_path(r"^$", AclCreate_dmz.as_view(), name="acloverview_urls"),
++        re_path(r"^(?P<acl_id>[0-9a-f-]+)/$", AclOver.as_view(), name="acloverview_urls"),
++        re_path(r"^(?P<acl_id>[0-9a-f-]+)/new/$", AclOver.as_view(), name="acloverview_urls"),
+     ])),
+ 
+     re_path("approve/", include([
+-        url(r"^$", Acl_approve.as_view(), name="acl_approve_urls"),
+-        url(r"^(?P<acl_id>[0-9a-f-]+)/new/$", Acl_approve.as_view(), name="acl_approve_urls"),
+-        url(r"^(?P<acl_id>[0-9a-f-]+)/$", Acl_approve.as_view(), name="acl_approve_urls"),
++        re_path(r"^$", Acl_approve.as_view(), name="acl_approve_urls"),
++        re_path(r"^(?P<acl_id>[0-9a-f-]+)/new/$", Acl_approve.as_view(), name="acl_approve_urls"),
++        re_path(r"^(?P<acl_id>[0-9a-f-]+)/$", Acl_approve.as_view(), name="acl_approve_urls"),
+     ])),
+ 
+     re_path("pending/", include([
+-        url(r"^$", Acl_approve.as_view(), name="acl_pending_urls"),
+-        url(r"^(?P<acl_id>[0-9a-f-]+)/$", Acl_pending.as_view(), name="acl_pending_urls"), #(?P<token>[0-9a-z]{10})/
+-        #url(r"^(?P<acl_id>[0-9a-f-]+)/new/$", Acl_pending.as_view(), name="acl_pending_urls"),
++        re_path(r"^$", Acl_approve.as_view(), name="acl_pending_urls"),
++        re_path(r"^(?P<acl_id>[0-9a-f-]+)/$", Acl_pending.as_view(), name="acl_pending_urls"), #(?P<token>[0-9a-z]{10})/
++        #re_path(r"^(?P<acl_id>[0-9a-f-]+)/new/$", Acl_pending.as_view(), name="acl_pending_urls"),
+     ])),
+ 
+     re_path("prepare/", include([
+-        url(r"^$", AclPrepare.as_view(), name="acl_prepare_urls"),
+-        url(r"^(?P<acl_id>[0-9a-f-]+)/$", AclPrepare.as_view(), name="acl_prepare_urls"),  # (?P<token>[0-9a-z]{10})/
+-        # url(r"^(?P<acl_id>[0-9a-f-]+)/new/$", Acl_pending.as_view(), name="acl_pending_urls"),
++        re_path(r"^$", AclPrepare.as_view(), name="acl_prepare_urls"),
++        re_path(r"^(?P<acl_id>[0-9a-f-]+)/$", AclPrepare.as_view(), name="acl_prepare_urls"),  # (?P<token>[0-9a-z]{10})/
++        # re_path(r"^(?P<acl_id>[0-9a-f-]+)/new/$", Acl_pending.as_view(), name="acl_pending_urls"),
+     ])),
+     path("checkip/<str:ip>/", CheckIp, name='check_ip_urls'),
+     path("remove/", AclRemove, name="acl_remove"),
+@@ -71,6 +70,6 @@ urlpatterns = [
+     path("act/<str:acl_id>/<str:job>/<str:do>/", act),
+     path("task/<str:acl_id>/", task, name="aclcheck_status_urls"),
+     path("task/<str:acl_id>/status", TaskStatus, name="aclcheck_status_urls"),
+-    url("$^", ACldefault, name="acldefault_urls")
++    re_path("$^", ACldefault, name="acldefault_urls")
+ ]
+ 
+
+
+==== File: acladmin/urls.py ====
+@@ -14,8 +14,7 @@ Including another URLconf
+     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
+ """
+ from django.contrib import admin
+-from django.urls import path
+-from django.conf.urls import include, url, re_path
++from django.urls import include, path, re_path
+ from django.conf import settings
+ from .views import login
+ from django.views.static import serve
+
+
+==== File: ownerlist/urls.py ====
+@@ -1,15 +1,14 @@
+-from django.urls import path
+-from django.conf.urls import url
++from django.urls import path, re_path
+ from .views import SearchView, TreeView, IpTable, Vpn, ip_save, ip_delete, ip_resolve, domain_resolve
+ 
+ urlpatterns = [
+     #path('ipconfig/', SearchView.as_view(), name="ipconfig_urls"),
+-    url('iptable/ip-save/', ip_save, name="ipsave_urls"),
+-    url('iptable/ip-delete/', ip_delete, name="ipdelete_urls"),
+-    url('iptable/ipresolv/', ip_resolve, name="ipresolv_urls"),
+-    url('iptable/domainresolv/', domain_resolve, name="domainresolv_urls"),
+-    url('iptable/', IpTable.as_view(), name="iptable_urls"),
+-    url('search/', SearchView.as_view(), name="search"),
+-    url('vpn/', Vpn.as_view(), name="vpn"),
+-    url(r'^$', TreeView.as_view(), name="ipconfig_urls"),
++    re_path('iptable/ip-save/', ip_save, name="ipsave_urls"),
++    re_path('iptable/ip-delete/', ip_delete, name="ipdelete_urls"),
++    re_path('iptable/ipresolv/', ip_resolve, name="ipresolv_urls"),
++    re_path('iptable/domainresolv/', domain_resolve, name="domainresolv_urls"),
++    re_path('iptable/', IpTable.as_view(), name="iptable_urls"),
++    re_path('search/', SearchView.as_view(), name="search"),
++    re_path('vpn/', Vpn.as_view(), name="vpn"),
++    re_path(r'^$', TreeView.as_view(), name="ipconfig_urls"),
+ ]
+
+
+==== File: requirements.txt ====
+@@ -1,4 +1,4 @@
+-python-dotenv
++python-dotenv==1.0.0
+ asgiref
+ bandit==1.7.0
+ certifi==2021.10.8
+@@ -6,7 +6,7 @@ cffi==1.15.0
+ charset-normalizer==2.0.7
+ colorama==0.4.4
+ cryptography==37.0.2
+-Django
++Django==3.1.6
+ django-python3-ldap==0.11.4
+ fontawesome-free==5.15.2
+ gitdb==4.0.7
+@@ -36,6 +36,4 @@ stevedore==3.3.0
+ typing-extensions==3.7.4.3
+ urllib3==1.26.7
+ xlrd
+-zipp==3.4.1
+-
+-python-dotenv
+\ No newline at end of file
++zipp==3.4.1
+\ No newline at end of file
+
+
+==== File: teams/urls.py ====
+@@ -1,7 +1,6 @@
+-from django.urls import path
+-from django.conf.urls import url
++from django.urls import path, re_path
+ from .views import *
+ 
+ urlpatterns = [
+-        url('^$', teams.as_view(), name="teams"),
++        re_path('^$', teams.as_view(), name="teams"),
+     ]
+\ No newline at end of file
+
+

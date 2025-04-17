@@ -1,0 +1,223 @@
+==== File: accesslist/templates/acl_create_info.html ====
+@@ -137,7 +137,7 @@
+ 
+              <label class="contact-form__label">
+                 <span class="contact-form__text" style="max-width: 140px">Описание проекта (wiki)</span>
+-                <input type="url" name="link" value="{% if LOCAL_STORAGE %}{{ LOCAL_STORAGE.5 }}{% endif %}" class="contact__input" placeholder="https://wiki.alfastrah.ru/pages/viewpage.action?pageId=133435707" pattern="^https:\/\/wiki.(alfastrah|aslife).ru(.*)$" title="https://wiki.alfastrah.ru/pages/viewpage.action?pageId=133435707" required>
++                <input type="url" name="link" value="{% if LOCAL_STORAGE %}{{ LOCAL_STORAGE.5 }}{% endif %}" class="contact__input" placeholder="https://wiki.alfastrah.ru/pages/viewpage.action?pageId=133435707" pattern="^https:\/\/wiki.(alfastrah|aslife).ru(.*)$" title="https://wiki.alfastrah.ru/pages/viewpage.action?pageId=133435707" readonly>
+                 <span class="validity"></span>
+             </label>
+ 
+@@ -334,7 +334,7 @@
+ 
+              <label class="contact-form__label">
+                 <span class="contact-form__text" style="max-width: 140px">Описание проекта (wiki)</span>
+-                <input type="url" name="link" value="{% if LOCAL_STORAGE %}{{ LOCAL_STORAGE.5 }}{% endif %}" class="contact__input" placeholder="https://wiki.alfastrah.ru/pages/viewpage.action?pageId=133435707" pattern="^https:\/\/wiki.(alfastrah|aslife).ru(.*)$" title="https://wiki.alfastrah.ru/pages/viewpage.action?pageId=133435707" required>
++                <input type="url" name="link" value="{% if LOCAL_STORAGE %}{{ LOCAL_STORAGE.5 }}{% endif %}" class="contact__input" placeholder="https://wiki.alfastrah.ru/pages/viewpage.action?pageId=133435707" pattern="^https:\/\/wiki.(alfastrah|aslife).ru(.*)$" title="https://wiki.alfastrah.ru/pages/viewpage.action?pageId=133435707" readonly>
+                 <span class="validity"></span>
+               </label>
+ 
+@@ -555,6 +555,9 @@
+                     upload_from_git_btn.disabled = false;
+                 }
+                 else{
++                    if ("project_desc" in response){
++                        localStorage.setItem('uploaded_project_desc', response["project_desc"]);
++                    }
+                     localStorage.setItem('uploaded_project_name', gitlab_project_name);
+                     localStorage.setItem('uploaded_filename', gitlab_uploaded_filename);
+                     localStorage.setItem('showNotification', 'true');
+@@ -575,6 +578,9 @@
+ 
+    if (localStorage.getItem('showNotification') === 'true'){
+         document.getElementById('acl_filename').value = localStorage.getItem('uploaded_filename');
++        if(localStorage.getItem('uploaded_project_desc') !== null){
++            document.getElementsByName('link')[0].value = localStorage.getItem('uploaded_project_desc');
++        }
+         project_select = document.getElementById('gitlab_proj_upload_dropdown');
+         for (var i=0; i < project_select.options.length; i++){
+             if(project_select.options[i].value === localStorage.getItem('uploaded_project_name')){
+@@ -585,6 +591,7 @@
+         ShowNotify(2, 'ACL Успешно загружен');
+         localStorage.removeItem('uploaded_filename');
+         localStorage.removeItem('uploaded_project_name');
++        localStorage.removeItem('uploaded_project_desc');
+         localStorage.removeItem('showNotification');
+         document.getElementById('save-form-btn').click();
+    }
+@@ -666,4 +673,41 @@
+         }
+     });
+ </script>
++
++<script>
++<!--  check project for btn-upload-from-git file list  -->
++    $(document).ready(function() {
++        $('#btn-upload-from-git').click(function(e) {
++            var git_project_select = document.getElementById('gitlab_proj_upload_dropdown');
++            var selected_option = git_project_select.options[git_project_select.selectedIndex];
++            var selected_project = selected_option.getAttribute("value");
++            if (selected_project == ""){
++                e.preventDefault();
++                ShowNotify(0, 'Для отображения файлов необходимо выбрать Проект/ИС');
++            }
++            else{
++                if($('#gitlab_file_upload_from_dropdown option').length == 0){
++                    var csrfToken = $('input[name="csrfmiddlewaretoken"]').val();
++            $.ajax({
++                url: '/acl/git_get_files/',
++                type: 'POST',
++                data: { 'gitlab_project': selected_project },
++                headers: {'X-CSRFToken': csrfToken},
++                success: function(response) {
++                    var files = JSON.parse(response);
++                    var fromGitDropdown = $('#gitlab_file_upload_from_dropdown');
++                    fromGitDropdown.empty();
++                    $.each(files, function(index, value) {
++                        fromGitDropdown.append($('<option>').text(value).attr('value', value));
++                    });
++                },
++                error: function(xhr, status, error) {
++                    ShowNotify(0, 'Ошибка при отображении файлов');
++                }
++            });
++                }
++            }
++        });
++    });
++</script>
+ {% endblock %}
+
+
+==== File: accesslist/views.py ====
+@@ -798,12 +798,17 @@ def upload_acl_from_git(request):
+             else:
+                 logger.info(f"[ПРОВЕРКА АВТОРИЗАЦИИ] Ошибка: {e}")
+ 
+-        md_content = get_acl_from_gitlab(repo_url=gitlab_repo_url, branch_name='develop', file_name=gitlab_file_name)
++        md_content, project_desc = get_acl_from_gitlab(repo_url=gitlab_repo_url, branch_name='develop', file_name=gitlab_file_name)
+         if md_content is not None:
+             result = convert_md_to_dict(md_content)
+             if 'LOCAL_STORAGE' in result:
+                 request.session['LOCAL_STORAGE'] = result.get('LOCAL_STORAGE')
++                if 'acl_create_info.html' in result['LOCAL_STORAGE']:
++                    result['LOCAL_STORAGE']['acl_create_info.html'][5] = project_desc
+         if request.method == 'POST' and request.is_ajax:
++            if len(result['LOCAL_STORAGE']) == 0:
++                data = {"project_desc":project_desc}
++                return HttpResponse(json.dumps(data), content_type="application/text")
+             return HttpResponse(json.dumps(result), content_type="application/text")
+         return HttpResponse(json.dumps("Error method type"), content_type="application/text")
+ 
+
+
+==== File: ownerlist/utils.py ====
+@@ -1,6 +1,7 @@
+ import os, shutil, sys
+ import urllib
+ from pathlib import Path, PurePosixPath
++import docx.opc.constants
+ from django.core.files.storage import FileSystemStorage
+ from django.apps import apps
+ from django.contrib import messages
+@@ -898,6 +899,31 @@ def UpdateCallBackStatus (request, taskid, name, value, event = 1):
+             pass
+     cache.set(taskid, JOB)
+ 
++def add_hyperlink(paragraph,url,text,color, underline):
++    import docx
++    part = paragraph.part
++    r_id = part.relate_to(url, docx.opc.constants.RELATIONSHIP_TYPE.HYPERLINK, is_external=True)
++
++    hyperlink = docx.oxml.shared.OxmlElement('w:hyperlink')
++    hyperlink.set(docx.oxml.shared.qn('r:id'), r_id)
++
++    new_run = docx.oxml.shared.OxmlElement('w:r')
++    rPr = docx.oxml.shared.OxmlElement('w:rPr')
++    if not color is None:
++        c = docx.oxml.shared.OxmlElement('w:color')
++        c.set(docx.oxml.shared.qn('w:val'), color)
++        rPr.append(c)
++    if underline:
++        u = docx.oxml.shared.OxmlElement('w:u')
++        u.set(docx.oxml.shared.qn('w:val'), 'single')
++        rPr.append(u)
++
++    new_run.append(rPr)
++    new_run.text = text
++    hyperlink.append(new_run)
++    paragraph._p.append(hyperlink)
++
++    return hyperlink
+ 
+ def make_doc(request=None, data_set={}, fileuuid='', gitlab_repo_url='', gitlab_filename='')->str:
+     """Функция для генерации docx файла"""
+@@ -915,13 +941,13 @@ def make_doc(request=None, data_set={}, fileuuid='', gitlab_repo_url='', gitlab_
+                                 data_set[data][row_idx][cell_idx] = cell_value.strip()
+                             except Exception as e:
+                                 logger.error(e)
+-            except Exception as e:
++            except:
+                 logger.warning('Ошибка при нормализации пробелов docx. Продолжаем создание docx.')
+                 continue
+         return data_set
+ 
+     if gitlab_repo_url != '' and gitlab_filename != '':
+-        md_content = get_acl_from_gitlab(repo_url=gitlab_repo_url, file_name=gitlab_filename)
++        md_content, project_desc = get_acl_from_gitlab(repo_url=gitlab_repo_url, file_name=gitlab_filename)
+ 
+         gitlab_data_set = convert_md_to_dict(md_content)['LOCAL_STORAGE']
+         data_set = normalize_whitespace(data_set)
+@@ -973,7 +999,18 @@ def make_doc(request=None, data_set={}, fileuuid='', gitlab_repo_url='', gitlab_
+                 try:
+                     if row_idx >= table_rows:
+                         table_tmp.add_row()
+-                    table_tmp.cell(row_idx, 1).text = row_data
++                    if row_idx == 5:
++                        if row_data != 'Нет' and row_data != '':
++                            try:
++                                for paragraph in table_tmp.cell(row_idx, 1).paragraphs:
++                                    add_hyperlink(paragraph, row_data, row_data, '0000EE', True)
++                            except Exception as e:
++                                table_tmp.cell(row_idx, 1).text = row_data
++                        else:
++                            table_tmp.cell(row_idx, 1).text = row_data
++                    else:
++                        table_tmp.cell(row_idx, 1).text = row_data
++
+                     if str(row_data) not in gitlab_data_set.get(data, []):
+                         for paragraph in table_tmp.cell(row_idx, 1).paragraphs:
+                             for run in paragraph.runs:
+@@ -1983,7 +2020,8 @@ def get_acl_from_gitlab(repo_url: str, branch_name: str = 'develop', file_name:s
+         if response.status_code == 200:
+             encoded_file_content = response.json()['content']
+             decoded_file_content = base64.b64decode(encoded_file_content).decode('utf-8')
+-            return decoded_file_content
++            project_desc = get_project_desc_from_git(session=session, project_id=str(project_id))
++            return decoded_file_content, project_desc
+         return
+     except Exception as e:
+         logger.error(f'[ПОЛУЧЕНИЕ md_content] Ошибка: {e}')
+@@ -2147,4 +2185,17 @@ def sync_acl_portal_projects_list(group_name : str = "ACL"):
+     except Exception as e:
+         logger.error(f"Ошибка при получении проектов: {e}")
+     finally:
+-        return project_list
+\ No newline at end of file
++        return project_list
++
++def get_project_desc_from_git(session=None, project_id=''):
++    project_desc = ''
++    try:
++        get_custom_attributes_from_git = f'https://gitlab.alfastrah.ru/api/v4/projects/{project_id}/custom_attributes/project_description'
++        response = session.get(get_custom_attributes_from_git)
++        if response.status_code == 200:
++            project_desc = response.json()["value"]
++        elif response.status_code == 404:
++            logger.info("Атрибут project_description не найден в gitlab.")
++    except Exception as e:
++        logger.error(f'Ошибка: не удалось получить описание проекта из gitlab.')
++    return project_desc
+\ No newline at end of file
+
+
