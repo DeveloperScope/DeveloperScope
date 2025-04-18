@@ -1,4 +1,0 @@
-==== File: templates/ACL.docx ====
-Binary files /dev/null and b/templates/ACL.docx differ
-
-

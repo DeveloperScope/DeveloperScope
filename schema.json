@@ -1,0 +1,83 @@
+{
+    "type": "json_schema",
+    "name": "MergeRequestAnalysis",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "hiddenReasoning": {
+          "type": "string",
+          "description": "The reasoning behind the merge request which is not visible on the surface."
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "Feature",
+            "Bug‑fix",
+            "Refactor",
+            "Performance",
+            "Security‐patch",
+            "Docs / comments",
+            "Chore / dependency bump"
+          ],
+          "description": "The type of the merge request."
+        },
+        "issues": {
+          "type": "array",
+          "description": "A list of potential issues identified in the merge request.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "filePath": {
+                "type": "string",
+                "description": "The file path where the issue was found."
+              },
+              "line": {
+                "type": "string",
+                "description": "The line number (or range) where the issue is located."
+              },
+              "issue": {
+                "type": "string",
+                "description": "Description of the potential issue."
+              },
+              "level": {
+                "type": "string",
+                "enum": [
+                  "LOW",
+                  "MEDIUM",
+                  "HIGH",
+                  "CRITICAL"
+                ],
+                "description": "The severity level of the issue."
+              }
+            },
+            "required": [
+              "filePath",
+              "line",
+              "issue",
+              "level"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "effortEstimate": {
+          "type": "string",
+          "enum": [
+            "Trivial",
+            "Minor",
+            "Moderate",
+            "Large",
+            "Major"
+          ],
+          "description": "An estimate of the effort required to address the merge request. 1 – trivial (1-5 mins, docs, small change). 2 – minor (5-15 mins, <10 LOC). 3 – moderate (simple logic, small feature, 10–50 LOC). Large (many files, potential side effects). Major project or architectural review needed"
+        }
+      },
+      "required": [
+        "hiddenReasoning",
+        "type",
+        "issues",
+        "effortEstimate"
+      ],
+      "additionalProperties": false
+    },
+    "strict": true
+  }

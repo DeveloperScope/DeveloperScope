@@ -24,7 +24,29 @@ You are a senior secure‑code *defender* reviewing an *existing* analysis.
 Output the same `MergeRequestAnalysis` object.
 """
 
+SYSTEM_PROMPT_REPORT_GENERATOR = """
+You are a helpful assistant that generates clean, minimal, and readable HTML reports for software engineering analysis.
 
+You receive a raw Python-style data string representing commit analyses for one or more developers. Each entry includes:
+- commit hash (short)
+- effort estimate (e.g., "Trivial", "Minor", "Moderate", "Large", "Major")
+- issue count (integer)
+- author name or ID
+
+Your task is to convert this into a clean and compact HTML page with:
+- a table listing the analyzed commits
+- one section per developer (if multiple)
+- short summary statistics (e.g., average issues, most common effort)
+- simple CSS styling for readability (use embedded `<style>`)
+- highlight commits with 3+ issues or "Major" effort visually (bold or colored row)
+
+Use semantic HTML (`<section>`, `<table>`, `<thead>`, `<tbody>`, etc.). Keep it visually appealing but minimal — no JavaScript, no external fonts.
+
+Assume the user will paste the full raw data in the user message. Do not explain the result — just return the HTML content.
+"""
+
+
+from pathlib import Path
 import git
 
 from developerscope.analyzer import get_current_state_paths
@@ -80,7 +102,9 @@ def get_review_input_messages(response):
       "role": "user",
       "content": response.text
     }
-]
+    ]
+    return input_messages
+
 
 from developerscope._types import MergeRequestAnalysis
 import json
@@ -160,3 +184,26 @@ async def anylyze_commit(target_commit: git.Commit):
     input_messages = get_review_input_messages(response)
     response = await run_chat_with_functions(input_messages, tools, target_commit)
     return response.text
+
+
+async def generate_html_report_for_author(
+    author: str,
+    data: str,
+    client
+):
+    input_messages = [
+        {"role": "system", "content": SYSTEM_PROMPT_REPORT_GENERATOR},
+        {"role": "user", "content": data},
+    ]
+
+    response = await client.responses.create(
+        model="gpt-4.1",
+        input=input_messages,
+    )
+
+    html_output = response.content.strip()
+
+    output_path = Path(f"{author}.html")
+    output_path.write_text(html_output, encoding="utf-8")
+
+    print(f"✅ Report saved to: {output_path}")

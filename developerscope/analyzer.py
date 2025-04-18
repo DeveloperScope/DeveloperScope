@@ -6,6 +6,10 @@ import re
 import git
 from pydriller import Repository
 
+import warnings
+warnings.filterwarnings("ignore", category=SyntaxWarning)
+
+from developerscope.haslted import halstead_effort
 
 TARGET_REPO = "devQ_testData_PythonProject"
 current_repo_path = Path().resolve()
@@ -64,7 +68,7 @@ def get_difference(commit: git.Commit) -> str:
 
     first_parent = commit.parents[0]
     diff_index = first_parent.diff(commit, create_patch=True)
-
+    
     difference = ''
     for diff in diff_index:
         diff_text = diff.diff.decode('utf-8')
@@ -76,6 +80,9 @@ def get_difference(commit: git.Commit) -> str:
 
 def get_prompt_for_merge_commit(commit: git.Commit) -> str:
     prompt = commit.message + '\n\n'
+
+    prompt += 'HASLTED EFFORT: %s\n\n' % halstead_effort(commit)    
+
     # for file in get_current_state_paths(commit):
     #     prompt += file + '\n'
     prompt += '\n' + get_difference(commit)
