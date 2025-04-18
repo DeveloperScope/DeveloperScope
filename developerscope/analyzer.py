@@ -58,14 +58,14 @@ def get_merge_commits_map(repo_path: str):
     return merge_commts_map, author_mapping
 
 
-def get_difference(merge_commit: git.Commit) -> str:
-    if len(merge_commit.parents) != 2:
-        raise ValueError("Only 2 parents allowed for merge request commits")
+def get_difference(commit: git.Commit) -> str:
+    # if len(merge_commit.parents) != 2:
+    #     raise ValueError("Only 2 parents allowed for merge request commits")
 
-    first_parent = merge_commit.parents[0]
-    diff_index = first_parent.diff(merge_commit, create_patch=True)
+    first_parent = commit.parents[0]
+    diff_index = first_parent.diff(commit, create_patch=True)
 
-    difference = merge_commit.message + '\n\n'
+    difference = ''
     for diff in diff_index:
         diff_text = diff.diff.decode('utf-8')
         file_header = f"==== File: {diff.a_path or diff.b_path} ====\n"
@@ -74,12 +74,23 @@ def get_difference(merge_commit: git.Commit) -> str:
     return difference
 
 
-def get_current_state(commit: git.Commit):
+def get_prompt_for_merge_commit(commit: git.Commit) -> str:
+    prompt = commit.message + '\n\n'
+    # for file in get_current_state_paths(commit):
+    #     prompt += file + '\n'
+    prompt += '\n' + get_difference(commit)
+    return prompt
+
+def get_current_state(commit: git.Commit, include_only: list[str] | None = None):
     file_chunks = []
 
     for blob in commit.tree.traverse():
         if blob.type == 'blob':  # it's a file
             file_path = blob.path
+            if include_only:
+                if file_path not in include_only:
+                    continue
+
             file_content = blob.data_stream.read().decode('utf-8', errors='replace')
             print(file_path)
             formatted = f"### FILE: `{file_path}`\n\n```\n{file_content}\n```\n"
@@ -88,3 +99,12 @@ def get_current_state(commit: git.Commit):
     # Join all file contents into a single string
     final_string = "\n\n".join(file_chunks)
     return final_string
+
+def get_current_state_paths(commit: git.Commit) -> list[str]:
+    file_paths = []
+
+    for blob in commit.tree.traverse():
+        if blob.type == 'blob':  # it's a file
+            file_paths.append(str(blob.path))
+    return file_paths
+
