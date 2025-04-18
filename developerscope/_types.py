@@ -18,6 +18,7 @@ class PottentialIssue(TypedDict):
     filePath: str
     line: str
     issue: str
+    proposedSolution: str
     level: IssueEnum
     
 
@@ -26,3 +27,7 @@ class MergeRequestAnalysis(TypedDict):
     type: MergeRequestEnum
     issues: list[PottentialIssue]
     effortEstimate: EffortEnum
+
+class MergeRequestAnalysisResponse(MergeRequestAnalysis):
+    author: str
+    commitHash: str
