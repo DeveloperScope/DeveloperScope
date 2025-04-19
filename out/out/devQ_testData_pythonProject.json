@@ -1,0 +1,2338 @@
+{
+    "status": "CLONED",
+    "authors": [
+        {
+            "name": "Яцковский Владимир",
+            "email": "IatskovskiiVV@alfastrah.ru",
+            "branches": [
+                {
+                    "name": "develop",
+                    "commits": [
+                        {
+                            "commitHash": "914a287d2ba32eeb80f6b9aa9025f25fc0d9e7ad",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "f0773b1cd0d75ff28a0b6e17cd429eddc8dd0624",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "1f58b326887af29ff4178c1ffe3e789d7acc441e",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "e3ffabf55ea3d9b163d3f667e65c9f2790d91d76",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "f91df8f4b584eb3db32aaccf9626bcfb6a4496e4",
+                            "status": "DONE"
+                        },
+                        {
+                            "commitHash": "df878469de9fa5966a1d9ca71c2e4bf1f131e5e5",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "f09d7ce71a22a98d3c02d3c9e58d19bc6f88f467",
+                            "status": "DONE"
+                        },
+                        {
+                            "commitHash": "e7cd3ca063622fe88124c7e7ccb60d7a1a58cea1",
+                            "status": "DONE"
+                        },
+                        {
+                            "commitHash": "23bf44af8f3badb293c2408c13774df15522d1c1",
+                            "status": "DONE"
+                        },
+                        {
+                            "commitHash": "ad25de0ec22b75f3d90dcd4f4f648fc61cb1a6a1",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "56fa22b9d18c4fcf4cc84dd97b9ad2b43a2e45cd",
+                            "status": "DONE"
+                        },
+                        {
+                            "commitHash": "b45ea321871503655835254ec48382f39133427c",
+                            "status": "DONE"
+                        },
+                        {
+                            "commitHash": "246bcd2280ebd5986c679720d71b211eced8d560",
+                            "status": "DONE"
+                        },
+                        {
+                            "commitHash": "f458367f020ee8569d0af5f7627c81eb4fb1201b",
+                            "status": "DONE"
+                        },
+                        {
+                            "commitHash": "912b61191a5a96f6e7c59cd8f71a174a03e29ef3",
+                            "status": "DONE"
+                        },
+                        {
+                            "commitHash": "343db715606fb047e6fb6b3ed0f9840484a00cca",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "01776c900f74e5d7045b7917fd4d77e08ef6429b",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "45736ebd9bf287a1f5a553ae318641b3b9d2434c",
+                            "status": "DONE"
+                        },
+                        {
+                            "commitHash": "ac1e3652bd4a716dfd0f17390627285552254e64",
+                            "status": "DONE"
+                        },
+                        {
+                            "commitHash": "10fdff7719fe9012d1e8fcd1aebd239b1f60576c",
+                            "status": "DONE"
+                        },
+                        {
+                            "commitHash": "447e793213d38b9a282426aaac7218d0307749b5",
+                            "status": "DONE"
+                        },
+                        {
+                            "commitHash": "1971224706f899a2fa1deda3e43a9dd95107a93f",
+                            "status": "DONE"
+                        },
+                        {
+                            "commitHash": "e653be919f10f67e77ccdf9ae877ee73151ae06e",
+                            "status": "DONE"
+                        },
+                        {
+                            "commitHash": "83880762f5707832dd09fc4ba40c62b09f1f0f7d",
+                            "status": "DONE"
+                        },
+                        {
+                            "commitHash": "14106f24d82783747d4f740b1df50b1bc2be708e",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "67263a760d6b75408458b31e4266ee0ea7649601",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "aef0a6d10a5b3fa04bade07678824eca51523d31",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "71828e3fca0bfab41ae44a63efa7b94d728bb7a9",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "f96d7b8bc79fc31ea1e084031146b584ee2a9aa0",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "9ef2b8e3dc642f488c622e0f66eb146ab79c6ad1",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "1555178628ca7f7eaa7b1410e40ab12a0d56c579",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "2a2f65f4b7857dc77eb878367eeb7b581186717d",
+                            "status": "DONE"
+                        },
+                        {
+                            "commitHash": "31edafc5cf35f066273f7fc1bc317be729fbd029",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "af1fa0c830b1f98f73e5619b0895dfa9d840d614",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "59661b198d08946e71a426def0f579ecfa8d2512",
+                            "status": "DONE"
+                        },
+                        {
+                            "commitHash": "a52c340ca357fce955b78186636b699e905bc2e5",
+                            "status": "DONE"
+                        }
+                    ]
+                },
+                {
+                    "name": "hackaton",
+                    "commits": [
+                        {
+                            "commitHash": "923f594ad9117b2149e301b420f6b3273bf4ab30",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "72f3082349fe4a2a374fee5006564bba8183858f",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "62a76fd2b4346e7ffe8f228857a7891e9d2957b6",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "f82a1868bcc1140701e9809e0ab9830aafb6995c",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "803df5ee3b9680612b0ac78faabb45bcbeb38268",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "8149afa8a36e733857f7c6dad5ce28f786d5eb99",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "73053696eb706acae82a9239a114eb5849b978a9",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "36af8d1a3b892430fa4963d94578e5e46d178032",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "9787e2bf4b80aeffcc3cd974c581f17da92e4e1f",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "f6188ffd0540eb8cc6eedb3e1519af2eea525756",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "9b674c623ceaeee2c0fd442c73ba883503501836",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "e8a218c90315a6cafc45c00ed879326454f3c763",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "53bd56569b432c87c27b82ca60c596e751a0cfa0",
+                            "status": "DONE"
+                        },
+                        {
+                            "commitHash": "764b229319e3fef4ea540a0506dc3be6d9e18c71",
+                            "status": "DONE"
+                        },
+                        {
+                            "commitHash": "84912343c0d3fce8189d8c023241f350a48eea3a",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "5bd976955aca726184172f0a39bf020da2147178",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "c532c284c8377d774902d55462feda74e6ab2ddd",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "d0532f47a03d147dd6886c5d8c148bae778d2606",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "e07498da438d9f4f3f8287116ae5dba9f3f4abc2",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "24cfb9ecbd7d88d4fd4d780a0393f22c399dc946",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "31f118d08bd194e3ffc19ca7306f32d020fcda43",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "707628b4e078bd53f0549a5280c5cb85ea14e094",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "0cac8e3b343f224055f2905bddcf2cbfe40bc90d",
+                            "status": "DONE"
+                        },
+                        {
+                            "commitHash": "f0954cdc7b58906eb952c7b8a3aa0009ef83b176",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "f5d2047d4a84f6cb1833c3f77bcf3b231556a85a",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "01f62dff19b47e2fc447f560643597238ca8e7a0",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "1e98b1032772afe2a11d175ae02e1676d88ed613",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "568d0c6d5c863d8b163b3ae29567a6e0ee1c7d3e",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "46ef74d275aa7f16fe61feb935b542a47debc7db",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "ea2bfa7ff5d513fe957bc9bb8c472daddab2eb0a",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "6806535241dcc4eb0252d65a77adbb728a34ac74",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "10d52c8242699f0e6d81628c7b12c16ea55cca7f",
+                            "status": "DONE"
+                        },
+                        {
+                            "commitHash": "86c5c6c4ebaaa05577d939d59e21a22166bede83",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "12903d708b63e2ebf7503c04cb1ad26f6b6d8d3c",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "cbb9b259fddc5381ef0c787479a2c50012689850",
+                            "status": "DONE"
+                        },
+                        {
+                            "commitHash": "353119ed2c5a7b870e9c0fa646aeedc37338594b",
+                            "status": "DONE"
+                        }
+                    ]
+                },
+                {
+                    "name": "master",
+                    "commits": [
+                        {
+                            "commitHash": "923f594ad9117b2149e301b420f6b3273bf4ab30",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "72f3082349fe4a2a374fee5006564bba8183858f",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "62a76fd2b4346e7ffe8f228857a7891e9d2957b6",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "f82a1868bcc1140701e9809e0ab9830aafb6995c",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "803df5ee3b9680612b0ac78faabb45bcbeb38268",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "8149afa8a36e733857f7c6dad5ce28f786d5eb99",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "73053696eb706acae82a9239a114eb5849b978a9",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "36af8d1a3b892430fa4963d94578e5e46d178032",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "9787e2bf4b80aeffcc3cd974c581f17da92e4e1f",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "f6188ffd0540eb8cc6eedb3e1519af2eea525756",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "9b674c623ceaeee2c0fd442c73ba883503501836",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "e8a218c90315a6cafc45c00ed879326454f3c763",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "53bd56569b432c87c27b82ca60c596e751a0cfa0",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "764b229319e3fef4ea540a0506dc3be6d9e18c71",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "84912343c0d3fce8189d8c023241f350a48eea3a",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "5bd976955aca726184172f0a39bf020da2147178",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "c532c284c8377d774902d55462feda74e6ab2ddd",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "d0532f47a03d147dd6886c5d8c148bae778d2606",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "e07498da438d9f4f3f8287116ae5dba9f3f4abc2",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "24cfb9ecbd7d88d4fd4d780a0393f22c399dc946",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "31f118d08bd194e3ffc19ca7306f32d020fcda43",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "707628b4e078bd53f0549a5280c5cb85ea14e094",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "0cac8e3b343f224055f2905bddcf2cbfe40bc90d",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "f0954cdc7b58906eb952c7b8a3aa0009ef83b176",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "f5d2047d4a84f6cb1833c3f77bcf3b231556a85a",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "01f62dff19b47e2fc447f560643597238ca8e7a0",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "1e98b1032772afe2a11d175ae02e1676d88ed613",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "568d0c6d5c863d8b163b3ae29567a6e0ee1c7d3e",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "46ef74d275aa7f16fe61feb935b542a47debc7db",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "ea2bfa7ff5d513fe957bc9bb8c472daddab2eb0a",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "6806535241dcc4eb0252d65a77adbb728a34ac74",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "10d52c8242699f0e6d81628c7b12c16ea55cca7f",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "86c5c6c4ebaaa05577d939d59e21a22166bede83",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "12903d708b63e2ebf7503c04cb1ad26f6b6d8d3c",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "cbb9b259fddc5381ef0c787479a2c50012689850",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "353119ed2c5a7b870e9c0fa646aeedc37338594b",
+                            "status": "NEW"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Isanin Anton",
+            "email": "isaninav@alfastrah.ru",
+            "branches": [
+                {
+                    "name": "develop",
+                    "commits": [
+                        {
+                            "commitHash": "66d418305f8a7b9fa70b2bd880b1d6c26b49e9ff",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "32e5820402074fd5fb7a466eccfffcfcb7110c08",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "2d2d8c722044eb830694ced17e55f2bcc55445bd",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "fadc582a4e4a84cba69c29ff8c14a19ecc199b8b",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "a4fea7ddae4d4a53d618ddd1c0ea37fc754fae98",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "e38b74cefbdf2b6841906c27f18df543fd3f0aea",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "6456f29d3fcb3563a92656fa5b89ac380d719bdb",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "035580815a96c52112377ac817d06709e16ca028",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "beacfb6d32e025d69419aec45d13196d6722614c",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "81558e3452e95e099b8079a6cb01c7222ced2dd3",
+                            "status": "DONE"
+                        },
+                        {
+                            "commitHash": "deb7a48026c2cfef4c75bcbd09519683631c04e4",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "e957467d904a5747cb8791af49e3d6134f99cf3e",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "86c2f77b0f7a5a43f31d274c49a3ba28885b27c4",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "9d9531d00e42aa7268d4a7119ca29f546b5bc870",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "0debbcc7cb0c2835ce4777c8e5b8a8dd7e0124fe",
+                            "status": "DONE"
+                        },
+                        {
+                            "commitHash": "5a5d788397ea045260f73a4b573065c227094714",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "7d3e6a420327c05609488ef1eec79868dbf0f9e8",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "76938000e1582ec04c5a06887009aa073c7aa512",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "12b75dcfca27939a6ae545edd505800bae45887b",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "07f7e735b4d49c4786d691d290240f463938af27",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "af544e98e19c44f55e86b00c026f535eea0cbb06",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "3f712fdf28d6289319693a123d530d4c90dfe8c0",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "9eea3661888c7d750378597b0565b56b5702de67",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "24e8ac1a1e0d50993bc33f5d21b5a8013df9da10",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "b0402b2e5eb95364e82ce32c652f0383c211aeba",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "5a1b8b22ddcdf990194366132273b749fcca15b3",
+                            "status": "DONE"
+                        },
+                        {
+                            "commitHash": "dcd4d3879d50613dcb125b2252595370149091f4",
+                            "status": "DONE"
+                        },
+                        {
+                            "commitHash": "59484974fdc40655e30c4ebed16b2eaae08b902f",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "d425b2cd093de4b5dc413c38f8a31b79bc5b5d91",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "8106c668f1713f01ebdff3698f66b06024a0b2e8",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "bc1bae3620205582c829c8c9b7829f257212f566",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "994dfa5a200342f33144b172f4a161ee7e968fde",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "0fb6d15de00c6ec4d35fdcad6e9bfb19bb0c0eb6",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "fe5abb5cb3c2e984ac472666a91a61e735aca4fb",
+                            "status": "DONE"
+                        },
+                        {
+                            "commitHash": "98c315273aa880e6143583ed508b3b90e8800330",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "db2428f0b2e0fd4e0d0d4595fdf32dbb2f885d2f",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "8945f6fc54848c68d060e8c736e8561fc0055c9f",
+                            "status": "DONE"
+                        },
+                        {
+                            "commitHash": "8617506fd63b26016a73ae7721a180ddafc722b0",
+                            "status": "DONE"
+                        },
+                        {
+                            "commitHash": "e349525f11b8b40efb9461cebe65ade7ad58fa09",
+                            "status": "DONE"
+                        },
+                        {
+                            "commitHash": "d8099b1b42005f4da0941eb814fb8d9246fff489",
+                            "status": "DONE"
+                        },
+                        {
+                            "commitHash": "1a3bbbe7714230fda428c8e308fa01c21c7ed950",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "3cd19576cadda39877d92201ed4dafd0e883074f",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "7546ccce8bad697d26d6013caa009f7251c25217",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "f8f2747662b9ba8e90f6161cdc62281aee43a456",
+                            "status": "DONE"
+                        },
+                        {
+                            "commitHash": "f19ce917d1a08df34b723db3de7a500e5c954191",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "05109fc88a4c1bc2b46735b6e9c5d59888133e4b",
+                            "status": "DONE"
+                        },
+                        {
+                            "commitHash": "dc7cbb0348fe00cf99f4394feab08555e5c5de85",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "ff91e46b0e0af62a03b7f7bc79cfa20651c9b16e",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "b82470a55beb1c3dacc3fa323d2639ec15b6dffc",
+                            "status": "DONE"
+                        },
+                        {
+                            "commitHash": "fc025b97398d76ab67656fb4db27292062d50cfb",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "dc6a0c7ffedd68e211319cd61aa420ced71bba3e",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "828ee5ec2ee62acb1327a9ea9f805f4f0e11e22b",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "8edd6113f8156f07aff11563525d582527633983",
+                            "status": "DONE"
+                        },
+                        {
+                            "commitHash": "2de634384ef593675ed0398e6e96c26dd6e48979",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "b8382fe9471910efdba98f694f2ecc5b0fdb3735",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "292e25492c3303ec1fe1e06134426418c027fc19",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "48781137f21e2ab9eca1f1f4660fea2839540ecb",
+                            "status": "DONE"
+                        },
+                        {
+                            "commitHash": "21041dc4b0c0387330ebb42c022b32e1237737a0",
+                            "status": "DONE"
+                        },
+                        {
+                            "commitHash": "064cd6c3e165d5c6d5ff0a98a01ecacdaaa1da51",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "3f06aba7a17ea2ea50f1bd65ea95b27f4f276c9a",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "fc97da843e04e54377803f0f2e17ffb8c7ba0a7c",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "8dce52f822b1f8bfbf56d940582ac44cf5292c16",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "38e12afec213959f0d44cfae0d7a5a8e39f294c7",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "d891aa57bc6393ce60caffbb23217e9e2d2e7370",
+                            "status": "DONE"
+                        },
+                        {
+                            "commitHash": "aa5c6116f97212b7fb8c0d6a4796e91b3bc251db",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "117e7fdc5ea72ce0efd40bbbb18baae4db39e4ea",
+                            "status": "DONE"
+                        },
+                        {
+                            "commitHash": "b5db052d6a62df557666d52479e98e9273a32e85",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "d1582ea70041f74cc58f55d5d737d744d6e2050e",
+                            "status": "DONE"
+                        },
+                        {
+                            "commitHash": "94a2f3705b000c9ea53793e2a9a647e6f0821dff",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "ca372e44d022bd76450667c39624e5329fe6562c",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "30bae29eaa664ce1548d3e50c89dffc68e320af4",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "884ca7528ea751054358f4ab6b06e44af9eedbcb",
+                            "status": "DONE"
+                        },
+                        {
+                            "commitHash": "c5be474fdbc5e0a25f65cdba06a050a5628bec90",
+                            "status": "DONE"
+                        },
+                        {
+                            "commitHash": "0c7e86b3450645a3a278585f4e98e67210947bf0",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "86595543e480a3733d53d03d83e288a5d0679aaf",
+                            "status": "DONE"
+                        },
+                        {
+                            "commitHash": "7f8f2c3bae67f05d48a45ce894399ff5a9f76a3d",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "3023b698f5cb8214a870835bb537d551c249ff23",
+                            "status": "DONE"
+                        },
+                        {
+                            "commitHash": "62d037d28a7d7c968e577c99cef4087cd71155ba",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "a82f02e83ef6b9f58591f56b1f765b2bacb1c28b",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "ecf6e241d4cd5fb15e5add9f13971dcfdc221f8e",
+                            "status": "DONE"
+                        },
+                        {
+                            "commitHash": "5c5206d390d28dd68753dff1702aca2145f04e63",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "6f3c751eb5172772b4986e33636ccb0a5dbb9f37",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "a7c9cac6595227f6cc0e8a8d879d1841d4eab5fe",
+                            "status": "DONE"
+                        },
+                        {
+                            "commitHash": "275b7b7df54866a233334bb1db2dc5b0ee5601fd",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "9c38c8fb6ce3f38f179c4ad783892b4eae3c5572",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "8a53439c0bc104f9f2818e767d54d56a1a8cd3b3",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "57f5e5da3cb734dede7ed01a13ac3f75c00a24d9",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "830246ef1a5db029131d5d562fd14d6171e89c21",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "813b5df340592bc813a939940017c4781cb27edc",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "fdbc1e4591b075981f4a9e1609a11d5fa6cdaf6f",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "8c37b824e3c35e0d9eac11e2b55f51aa97a80610",
+                            "status": "NEW"
+                        }
+                    ]
+                },
+                {
+                    "name": "hackaton",
+                    "commits": [
+                        {
+                            "commitHash": "a2f17034e5f66db9ca8ea09c38002434391fb125",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "c29c51fbaeb2ac0e3ab13405a92c470297e6c89b",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "d6d3383a24f4f834ac51871382687e236d0ac636",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "c61265f3ed4c3e444172a999625ba768a94a01bc",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "38ee1c3fa410d6e0c4ee8078e4d4ee1146c4f710",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "70391987c5ab3bf5ec84c2c81290f9e4c900f505",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "6d3f4651db4fdcf46c839c293ceb3982eb67cea6",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "97303dc822862bf5975bdd1cbe9c06afc36e7a0e",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "49f1106f6297f31dd06392755bbb8df0b4dc7458",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "a42c7de01ec1a178ee2591eaa8f88ffd9d0fe955",
+                            "status": "DONE"
+                        },
+                        {
+                            "commitHash": "2fbe6d38332a3c5ebdf665a58f5a010d031a2988",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "87b7f7e3c720f8b26af492bcb5a3848dafc4e8d8",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "c6ac64c6dfd6cfd031a3a9be216a9acc633c3a2c",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "4888fc4c7333deb0457947507d7690ce64a2ee99",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "1cf6fba51acc0a5657e5a2abbca7ed0110ca0806",
+                            "status": "DONE"
+                        },
+                        {
+                            "commitHash": "61f773d96ff7c41622f20e441ceb9f67294b22bc",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "3f8d7f9c14257804210925b04da0ccc8b49412e4",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "30b3a382134515fa94139c0dda4f892bff9d33b2",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "ddd31b033dd3946c4ab3206c00c1e8ddc9eb9c91",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "09cdefd91b4fdde5ab532f051a171c48d1c6c8a9",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "baee2af3689d7be75161aaa185ae66bc199963dd",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "4e092ac0d1341796281a2134263a88397f9463bf",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "65eb169bd79bc2ff922317569389912738b20987",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "8fe934fdeeafc9d052b881c82af7729e8c4aea02",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "bf819fc629bf660cada08ea53a9199885858f375",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "02d60df75d8a42a7234dce4c15c8ce3ce28ad46e",
+                            "status": "DONE"
+                        },
+                        {
+                            "commitHash": "0d5f24aea5b8a58fd92c87bcd7768b4438ba53fe",
+                            "status": "DONE"
+                        },
+                        {
+                            "commitHash": "756525b7d48908553d4caafc88853ff281c7a784",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "836529dc55400d3b47185b339b8edf6c8cba86ad",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "3d664463b54af04b4f653443e75b7cbebb119b7b",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "c148b05adf39f048b1f46ab74fc3b697574963d3",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "8fe5db8579969c7dea46194a386957ec1e097cd8",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "8f4d5fbced3504b49a31e264e9475dc311a36c9a",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "8574978f88b14496600cf611ee3f3f5ca9ad67ba",
+                            "status": "DONE"
+                        },
+                        {
+                            "commitHash": "64bd536d4332da0db7348b9398eb0e896eeb7fac",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "f4c9ea069241061e4a3d5fb98cfd08a6ff612967",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "87663c9e8a3b03dcae7336738165e9c37c9c8284",
+                            "status": "DONE"
+                        },
+                        {
+                            "commitHash": "98f5a851f94f546795906ed583eb16be33df61d9",
+                            "status": "DONE"
+                        },
+                        {
+                            "commitHash": "82a9bc0c27ebffb8710df5255bb07fe013f47716",
+                            "status": "DONE"
+                        },
+                        {
+                            "commitHash": "3294b581c64df9a3e3695308d430a09766e7c325",
+                            "status": "DONE"
+                        },
+                        {
+                            "commitHash": "a8d2ae85a2184cefa53c1e1be523ab9bb724255c",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "cd4ec7b6580023fa7385540a6db455dd60a6c370",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "e850ff4a1b7c5855b8e770fd397045172e5514e4",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "35c0d5863785b0f80d41584a8b99a2a25dbda704",
+                            "status": "DONE"
+                        },
+                        {
+                            "commitHash": "1e6c2bf9f231a2f6bb0bdcb9ac3ecb4527ad2a2d",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "eaba571f39fedf79f193ac21a18b5bc0b3ff5866",
+                            "status": "DONE"
+                        },
+                        {
+                            "commitHash": "55d612839f4d0fcd7caa3de080eff967f4e7416c",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "80cbd422565e054bd6c1e6d60ef1b831ac623471",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "217bc37717479af909081a03360d0b9a9298eff9",
+                            "status": "DONE"
+                        },
+                        {
+                            "commitHash": "421dab619d1b6761af8f38f1becd5ce4d82da57d",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "97d69bdddd04ca058258b6624f311e9594726f8d",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "b9d4e3c5b01f4a22d190f32c05118d826eb5a06d",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "49a2566f4fe4d5fc588328bdf6b221d3dbc603d5",
+                            "status": "DONE"
+                        },
+                        {
+                            "commitHash": "0d6c65f95c252c54415a9fa7362b0d200c9002d2",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "34e1e232dc12ec8dfe23ddec33ce6ea9c356b971",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "98e29d9c72817121f433e6efbe85b23381fa79de",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "5872015f093d5c7abf687c71e8036667f588dc50",
+                            "status": "DONE"
+                        },
+                        {
+                            "commitHash": "f1be608b9a7af7f3d2930413bf397ffbab6b6ce7",
+                            "status": "DONE"
+                        },
+                        {
+                            "commitHash": "a6a9495e5fe743d73a0f43e587d4e5b69fd82a29",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "6b427551aa205d0cf9f257997836fc6720d505d6",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "dfaf9797a5891ffdb069f2de1dbe7097b184ab33",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "120150043914d11f9bacad5243bc5a1caa36ab79",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "409886d99624bd8a2605dcb6ae02b964ad8d7112",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "d03e8ba9638b749ee73a82e14266a1cd8f25c7da",
+                            "status": "DONE"
+                        },
+                        {
+                            "commitHash": "67895abdbfffa5d36b578c17538d350812e22ac6",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "466b8ba852a36d6072a34b766f9901552eea91bc",
+                            "status": "DONE"
+                        },
+                        {
+                            "commitHash": "4457212119bc8cf7ef17084e9679eb773231478e",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "4f236804b6bc420b35cf077eb099554b83e8d3ea",
+                            "status": "DONE"
+                        },
+                        {
+                            "commitHash": "c82690b672e31e9852134c4e40c4095c17b7d168",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "6e7264eba9fb678b4a099d9d76adaa34bbc0d8fe",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "cc5ca95aa9c5d334ba32e18e9c294a06e04f9510",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "c0644ac3d52b1be081e333430ddfe5c6f5a804c3",
+                            "status": "DONE"
+                        },
+                        {
+                            "commitHash": "7b530d9ba2439643699e568045789c2092c4ef3b",
+                            "status": "DONE"
+                        },
+                        {
+                            "commitHash": "ef692d9d4fa3c0776a30ddbd3f635190d8dbefc3",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "5b5edf9e087b04810554cb2716702eebb8e1d899",
+                            "status": "DONE"
+                        },
+                        {
+                            "commitHash": "1958980b5c69be4e545f290fd0fd733c55a58448",
+                            "status": "DONE"
+                        },
+                        {
+                            "commitHash": "07a2d36023a4760583f0a589ab9f4555f20e946d",
+                            "status": "DONE"
+                        },
+                        {
+                            "commitHash": "f52d1523d1556f3f2214448758c2215db1a2ed7c",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "6a1f4495e4438dfd0121d9751e72808864ef87e0",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "245310fa1110d85744c1006f537073e3a5030c9a",
+                            "status": "DONE"
+                        },
+                        {
+                            "commitHash": "6b63939c31726bbbd119077f6563f03570d60cc0",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "ad054a23e4b97c491c8bb2f4b2765d6d8e4da76f",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "62d2631960cb9eb689cc8700d0c16bbb1eae1475",
+                            "status": "DONE"
+                        },
+                        {
+                            "commitHash": "a8d6d38f20b9de0dfc28ad0f61f8c157516d1f05",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "5cc6fd5d15c94d4166b724853f6b0f3730b0db97",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "5e2a8377854ffc7456131b8833d3fcf3cb72ac99",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "8391294b6972ce0783820b7ecfe14d47ab7903a5",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "788053bad28c171e52766bf5f20f4968f2e95ebd",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "d0434d1f25c5401ecdfa2df9a7a110979cdabebf",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "f542fabd5193c9006ea620c1d7e862f5674640d5",
+                            "status": "DONE"
+                        },
+                        {
+                            "commitHash": "65dfea035d4a8a6b3c9d384745bcdcc8531f8a14",
+                            "status": "NEW"
+                        }
+                    ]
+                },
+                {
+                    "name": "master",
+                    "commits": [
+                        {
+                            "commitHash": "a2f17034e5f66db9ca8ea09c38002434391fb125",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "c29c51fbaeb2ac0e3ab13405a92c470297e6c89b",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "d6d3383a24f4f834ac51871382687e236d0ac636",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "c61265f3ed4c3e444172a999625ba768a94a01bc",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "38ee1c3fa410d6e0c4ee8078e4d4ee1146c4f710",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "70391987c5ab3bf5ec84c2c81290f9e4c900f505",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "6d3f4651db4fdcf46c839c293ceb3982eb67cea6",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "97303dc822862bf5975bdd1cbe9c06afc36e7a0e",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "49f1106f6297f31dd06392755bbb8df0b4dc7458",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "a42c7de01ec1a178ee2591eaa8f88ffd9d0fe955",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "2fbe6d38332a3c5ebdf665a58f5a010d031a2988",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "87b7f7e3c720f8b26af492bcb5a3848dafc4e8d8",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "c6ac64c6dfd6cfd031a3a9be216a9acc633c3a2c",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "4888fc4c7333deb0457947507d7690ce64a2ee99",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "1cf6fba51acc0a5657e5a2abbca7ed0110ca0806",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "61f773d96ff7c41622f20e441ceb9f67294b22bc",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "3f8d7f9c14257804210925b04da0ccc8b49412e4",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "30b3a382134515fa94139c0dda4f892bff9d33b2",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "ddd31b033dd3946c4ab3206c00c1e8ddc9eb9c91",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "09cdefd91b4fdde5ab532f051a171c48d1c6c8a9",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "baee2af3689d7be75161aaa185ae66bc199963dd",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "4e092ac0d1341796281a2134263a88397f9463bf",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "65eb169bd79bc2ff922317569389912738b20987",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "8fe934fdeeafc9d052b881c82af7729e8c4aea02",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "bf819fc629bf660cada08ea53a9199885858f375",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "02d60df75d8a42a7234dce4c15c8ce3ce28ad46e",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "0d5f24aea5b8a58fd92c87bcd7768b4438ba53fe",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "756525b7d48908553d4caafc88853ff281c7a784",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "836529dc55400d3b47185b339b8edf6c8cba86ad",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "3d664463b54af04b4f653443e75b7cbebb119b7b",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "c148b05adf39f048b1f46ab74fc3b697574963d3",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "8fe5db8579969c7dea46194a386957ec1e097cd8",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "8f4d5fbced3504b49a31e264e9475dc311a36c9a",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "8574978f88b14496600cf611ee3f3f5ca9ad67ba",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "64bd536d4332da0db7348b9398eb0e896eeb7fac",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "f4c9ea069241061e4a3d5fb98cfd08a6ff612967",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "87663c9e8a3b03dcae7336738165e9c37c9c8284",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "98f5a851f94f546795906ed583eb16be33df61d9",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "82a9bc0c27ebffb8710df5255bb07fe013f47716",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "3294b581c64df9a3e3695308d430a09766e7c325",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "a8d2ae85a2184cefa53c1e1be523ab9bb724255c",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "cd4ec7b6580023fa7385540a6db455dd60a6c370",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "e850ff4a1b7c5855b8e770fd397045172e5514e4",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "35c0d5863785b0f80d41584a8b99a2a25dbda704",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "1e6c2bf9f231a2f6bb0bdcb9ac3ecb4527ad2a2d",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "eaba571f39fedf79f193ac21a18b5bc0b3ff5866",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "55d612839f4d0fcd7caa3de080eff967f4e7416c",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "80cbd422565e054bd6c1e6d60ef1b831ac623471",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "217bc37717479af909081a03360d0b9a9298eff9",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "421dab619d1b6761af8f38f1becd5ce4d82da57d",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "97d69bdddd04ca058258b6624f311e9594726f8d",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "b9d4e3c5b01f4a22d190f32c05118d826eb5a06d",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "49a2566f4fe4d5fc588328bdf6b221d3dbc603d5",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "0d6c65f95c252c54415a9fa7362b0d200c9002d2",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "34e1e232dc12ec8dfe23ddec33ce6ea9c356b971",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "98e29d9c72817121f433e6efbe85b23381fa79de",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "5872015f093d5c7abf687c71e8036667f588dc50",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "f1be608b9a7af7f3d2930413bf397ffbab6b6ce7",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "a6a9495e5fe743d73a0f43e587d4e5b69fd82a29",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "6b427551aa205d0cf9f257997836fc6720d505d6",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "dfaf9797a5891ffdb069f2de1dbe7097b184ab33",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "120150043914d11f9bacad5243bc5a1caa36ab79",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "409886d99624bd8a2605dcb6ae02b964ad8d7112",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "d03e8ba9638b749ee73a82e14266a1cd8f25c7da",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "67895abdbfffa5d36b578c17538d350812e22ac6",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "466b8ba852a36d6072a34b766f9901552eea91bc",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "4457212119bc8cf7ef17084e9679eb773231478e",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "4f236804b6bc420b35cf077eb099554b83e8d3ea",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "c82690b672e31e9852134c4e40c4095c17b7d168",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "6e7264eba9fb678b4a099d9d76adaa34bbc0d8fe",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "cc5ca95aa9c5d334ba32e18e9c294a06e04f9510",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "c0644ac3d52b1be081e333430ddfe5c6f5a804c3",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "7b530d9ba2439643699e568045789c2092c4ef3b",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "ef692d9d4fa3c0776a30ddbd3f635190d8dbefc3",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "5b5edf9e087b04810554cb2716702eebb8e1d899",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "1958980b5c69be4e545f290fd0fd733c55a58448",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "07a2d36023a4760583f0a589ab9f4555f20e946d",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "f52d1523d1556f3f2214448758c2215db1a2ed7c",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "6a1f4495e4438dfd0121d9751e72808864ef87e0",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "245310fa1110d85744c1006f537073e3a5030c9a",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "6b63939c31726bbbd119077f6563f03570d60cc0",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "ad054a23e4b97c491c8bb2f4b2765d6d8e4da76f",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "62d2631960cb9eb689cc8700d0c16bbb1eae1475",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "a8d6d38f20b9de0dfc28ad0f61f8c157516d1f05",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "5cc6fd5d15c94d4166b724853f6b0f3730b0db97",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "5e2a8377854ffc7456131b8833d3fcf3cb72ac99",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "8391294b6972ce0783820b7ecfe14d47ab7903a5",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "788053bad28c171e52766bf5f20f4968f2e95ebd",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "d0434d1f25c5401ecdfa2df9a7a110979cdabebf",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "f542fabd5193c9006ea620c1d7e862f5674640d5",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "65dfea035d4a8a6b3c9d384745bcdcc8531f8a14",
+                            "status": "NEW"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "PanfilovVA",
+            "email": "PanfilovVA@alfastrah.ru",
+            "branches": [
+                {
+                    "name": "develop",
+                    "commits": [
+                        {
+                            "commitHash": "ca88f2c318cae9ceba512d35431f5bfc66c80ed4",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "c91b805dee713afa01e0fff7760c5319234b3b0f",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "27afd115d05425b59ad4a035347a48dbb4224933",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "d4aac49635fc430a4e710a772553381bbca17a0f",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "928a04050033ef1003c2ce45dcd10020e60dae31",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "7e1cd7c5907ca7a1bb1daca477fd500e560ebf21",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "e4c9d363ac18a84aa29bbde40437d6e4422255bf",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "b661eb02b42b0afd72a053f07ffa106f51031479",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "f8256af63f3ec746ecaf0e89a6bec71f7372c60f",
+                            "status": "DONE"
+                        },
+                        {
+                            "commitHash": "684ba0f726de87a64dbc3f4d1d1c0c2e2d874861",
+                            "status": "DONE"
+                        },
+                        {
+                            "commitHash": "d2f265407e009f3e0397b1fdfd78ddb9470eefb0",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "52dda580cfc3c96f39fc33390e40cac59d4f6bd1",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "4e6ab2a84d761958b8261679cd8bb8fb06d8ca68",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "b168fbdf6609b21f4a9182cd450297a56bf055b9",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "3d6afb5e943ff6d40b2bb1ae264288c2a1a4b04b",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "3c61d7ca814d056064ad7256872669f9c9fb6c00",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "7672f2a6ef68ebf14654bb29bffd4acb1b85a80b",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "b1bc001d985b7b22b48d923e44ebc89bd5a10a5c",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "24a10cb9d4bbe5499333234826edc21a1d9a0700",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "3f62634291a668534aff4edac6e71e23c4c1f898",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "becc9ba24a13cf48476c551e2f5aa2acdb4b3b30",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "36e501d9c8aa8fb5b12b056c62461b0bfd57cdc9",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "517d5ce152662efa80db57bd6b01029c05c4d67b",
+                            "status": "DONE"
+                        },
+                        {
+                            "commitHash": "05e431b401bf48936b95ca23bd5028045e43ada0",
+                            "status": "DONE"
+                        },
+                        {
+                            "commitHash": "7ade4c0059466dd68dfb63ea03a881d717491011",
+                            "status": "DONE"
+                        }
+                    ]
+                },
+                {
+                    "name": "hackaton",
+                    "commits": [
+                        {
+                            "commitHash": "129301e31a0b8c2433b1125a385ade0a2aded7c5",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "77263744764bd5dc89bf2fde5b711ae4cb11c96a",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "052ef1f44bea904ddd883df31f50ea2b841370bf",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "35fe1be85343f9d195a37160f7760f53068520b7",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "f4a95c990f64e8d5d7f22bc5da245f9eae72ab0c",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "36ec40dcf31c55ee478f6472655a5eed163d2bb5",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "3372fea3aae09e32ac816b10d34e17d33cc90f1e",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "f969a704278f9cce132bc74e6c243232c7fee55d",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "784e9e0d9a1f66caa821bc84d467c1eb56de352f",
+                            "status": "DONE"
+                        },
+                        {
+                            "commitHash": "bc8a0b62544adb5a8ae1cb13f8417c33f7fb54bf",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "ed80859d904dcd62e217c397e6f838b4d4b6daef",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "060f747ed66db0345e2b8a0465bf1753549572b2",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "83bada53c44a7a03169a296985bcba8e0dd37053",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "704761babfe66089275333ab69bf26f6e24a9319",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "1b38d521f17c4da9c3f615d5d8df0636d0d166c3",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "ce947ae2c0f08884049128af2af28a32c923bdfb",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "d550a4af637adb6e1498862b00cdb073b821d3bc",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "7c564d8e57c2e65290a0fcbf9a335ace958c26c1",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "3a20e56cfd2be9d0ef02840f2f5752c0b6e9ee61",
+                            "status": "DONE"
+                        },
+                        {
+                            "commitHash": "cc24c2051533f120bd1ea1e93b08e241d120faa0",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "c4c5ce9b019ab58058b6636c5b8f5e028fde2982",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "1a120addfe85d7b3dfef204830a72efe224c1eb4",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "0a50380899cc0f5d05ec2305a1e3748767dae5c1",
+                            "status": "DONE"
+                        },
+                        {
+                            "commitHash": "656c8f82a399cdf8320fa5e231e4ddb604f84efb",
+                            "status": "DONE"
+                        },
+                        {
+                            "commitHash": "e00b1783cdb316c87ffe4466f56f59376f3e28ed",
+                            "status": "DONE"
+                        }
+                    ]
+                },
+                {
+                    "name": "master",
+                    "commits": [
+                        {
+                            "commitHash": "129301e31a0b8c2433b1125a385ade0a2aded7c5",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "77263744764bd5dc89bf2fde5b711ae4cb11c96a",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "052ef1f44bea904ddd883df31f50ea2b841370bf",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "35fe1be85343f9d195a37160f7760f53068520b7",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "f4a95c990f64e8d5d7f22bc5da245f9eae72ab0c",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "36ec40dcf31c55ee478f6472655a5eed163d2bb5",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "3372fea3aae09e32ac816b10d34e17d33cc90f1e",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "f969a704278f9cce132bc74e6c243232c7fee55d",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "784e9e0d9a1f66caa821bc84d467c1eb56de352f",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "bc8a0b62544adb5a8ae1cb13f8417c33f7fb54bf",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "ed80859d904dcd62e217c397e6f838b4d4b6daef",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "060f747ed66db0345e2b8a0465bf1753549572b2",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "83bada53c44a7a03169a296985bcba8e0dd37053",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "704761babfe66089275333ab69bf26f6e24a9319",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "1b38d521f17c4da9c3f615d5d8df0636d0d166c3",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "ce947ae2c0f08884049128af2af28a32c923bdfb",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "d550a4af637adb6e1498862b00cdb073b821d3bc",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "7c564d8e57c2e65290a0fcbf9a335ace958c26c1",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "3a20e56cfd2be9d0ef02840f2f5752c0b6e9ee61",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "cc24c2051533f120bd1ea1e93b08e241d120faa0",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "c4c5ce9b019ab58058b6636c5b8f5e028fde2982",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "1a120addfe85d7b3dfef204830a72efe224c1eb4",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "0a50380899cc0f5d05ec2305a1e3748767dae5c1",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "656c8f82a399cdf8320fa5e231e4ddb604f84efb",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "e00b1783cdb316c87ffe4466f56f59376f3e28ed",
+                            "status": "NEW"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Васильев Артём Романович",
+            "email": "vasilevar@alfastrah.ru",
+            "branches": [
+                {
+                    "name": "develop",
+                    "commits": [
+                        {
+                            "commitHash": "7f90432badcc1ac4c926d3fcbf5120eded4ed91f",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "3ffacb0cd56b85056f31a8edaf38eeb857944d61",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "d4fe6ed027392f36304c1e1da7f05bce92010da8",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "37c66b462bfa87ba4c0f2e96d605f54df1656ecb",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "9f6c2e59567339e3ec67839ce2257a19c1b34090",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "e7e6b8880c5f009b5bf455a19be5cef1fc91c39e",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "a6746cc68380dba972e789db0dd6668c861567fe",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "02fdc2f8086a1cb90d96c84a16647037a7ab339a",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "ec06dc870e02ab0ff066095e75de322a927d54f8",
+                            "status": "DONE"
+                        },
+                        {
+                            "commitHash": "9837f02db3fce88d2990e5d0859175a5d45c3d11",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "cc28d15f6e4a59b06b6a301f764fbb4f7fe7abb4",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "39aecb4ec9ae1439a2e36efb6d1ce2b1aba38237",
+                            "status": "DONE"
+                        },
+                        {
+                            "commitHash": "ff56e463764905c6c041c9ce770e80d7409b251f",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "c64c0b74e241376f33dfaf0c831ce697f6dd1f1c",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "6ad3ae301b9386fa2ae97efe3591ebbb8e950811",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "a3358b852fb53524808b83ce0a05664cebf3faf4",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "6e532bb2156ad09650167a880ac32b5c97ef5822",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "285410f4bc02cc82d8e8478a39702ede88f9e71c",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "7c7a0e9e4231831d4f50d72c374a325d077082da",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "29be31f923b36386abde9f837ec61598ab33da20",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "44bebdc13f5688c324fde297d07bfed4287fc8e5",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "493e23c72795f1496532055f02b4fe1f01999a63",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "4297e7850b6c924111fedac05990162dc3d14d30",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "e49512702cfdb618b4c0e2cbedac1d24e78a285f",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "630c8063283a8798f7a43ff2f5e48ce8db5591df",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "f198bffdb830c80bc58c34b1812a9678d39825b2",
+                            "status": "NEW"
+                        }
+                    ]
+                },
+                {
+                    "name": "hackaton",
+                    "commits": [
+                        {
+                            "commitHash": "060351773e0889d4638feb5e27ea417d294da7c1",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "c60daff36efaac43076b2b56f16e3c352c3ac559",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "bc452e2c267e9f91da97d9d735c6ab7ddfa74338",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "2a658d792abdd4ce0d702473fd195d1abc2085fa",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "68c10ffb598e2b5bf3e8221fd2272c99f8a1f8eb",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "187ebda74d0ceba852c590461bf0d052c713c3f8",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "b9d0a0ed2f5f05ec0fd98ef34821ab9b37b67e26",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "abd955725f467697bb1efe34c9b8381cc656db1a",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "bc829ee054f81aa1f4fc0bd7b372b55e17c7bc04",
+                            "status": "DONE"
+                        },
+                        {
+                            "commitHash": "99547ebdb10d353e88a9322135ecc7cd04f6034f",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "40b2c4c281ea630c36b2834bdbe96f5861be7123",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "3bffdcfb18bd28092d0c8738e145a137fd888daf",
+                            "status": "DONE"
+                        },
+                        {
+                            "commitHash": "0b8c5c3a80694d49ee56f6ec6c224e822fac2ed6",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "ded65c11251ad5b0d20f71c1b0b8307f17aca3e2",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "2059f5e81180917851a2e8e3d28b4b73e9bde1fd",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "309fe275ca77c08215abb4681439fc7ef770c7d8",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "bfb63ed63d9deb02968604f8206e3a010222c37f",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "23163e05be56ca224954ccae53e772ec782285b6",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "2ab28f6973733a117401b6c5002bed69009acb72",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "453a4d5ec9c1433e8dfd098c78facf4b1ccd4188",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "33224fc90e6c7fdd0db4074857aae2585ad1f4c3",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "410f8a71f21d91088ef8f302b501ba42ac4fb27d",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "c55a11c47cfdb2ad72bb5276de6b1b558836b2d9",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "12582d6d286bdcf1bc04d10f0ce812d156073cde",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "046bd6638a30086f36312f45296c50b096d5b39f",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "058357b6239a9c9bf5858ca38ba2133c65556631",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "21afed19fa8e0bb2f52a723c60efd9b0bab67bea",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "b796460593a909c55ab1ca48a2a8ca45080d8481",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "9063764627f683ce5facf06d8ba07c910858bc07",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "366572320f6805a11fc4f9546b604792323f6688",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "a32789de1fe803367fa8c33a0be55da72d26a9a9",
+                            "status": "DONE"
+                        }
+                    ]
+                },
+                {
+                    "name": "master",
+                    "commits": [
+                        {
+                            "commitHash": "060351773e0889d4638feb5e27ea417d294da7c1",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "c60daff36efaac43076b2b56f16e3c352c3ac559",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "bc452e2c267e9f91da97d9d735c6ab7ddfa74338",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "2a658d792abdd4ce0d702473fd195d1abc2085fa",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "68c10ffb598e2b5bf3e8221fd2272c99f8a1f8eb",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "187ebda74d0ceba852c590461bf0d052c713c3f8",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "b9d0a0ed2f5f05ec0fd98ef34821ab9b37b67e26",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "abd955725f467697bb1efe34c9b8381cc656db1a",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "bc829ee054f81aa1f4fc0bd7b372b55e17c7bc04",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "99547ebdb10d353e88a9322135ecc7cd04f6034f",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "40b2c4c281ea630c36b2834bdbe96f5861be7123",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "3bffdcfb18bd28092d0c8738e145a137fd888daf",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "0b8c5c3a80694d49ee56f6ec6c224e822fac2ed6",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "ded65c11251ad5b0d20f71c1b0b8307f17aca3e2",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "2059f5e81180917851a2e8e3d28b4b73e9bde1fd",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "309fe275ca77c08215abb4681439fc7ef770c7d8",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "bfb63ed63d9deb02968604f8206e3a010222c37f",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "23163e05be56ca224954ccae53e772ec782285b6",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "2ab28f6973733a117401b6c5002bed69009acb72",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "453a4d5ec9c1433e8dfd098c78facf4b1ccd4188",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "33224fc90e6c7fdd0db4074857aae2585ad1f4c3",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "410f8a71f21d91088ef8f302b501ba42ac4fb27d",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "c55a11c47cfdb2ad72bb5276de6b1b558836b2d9",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "12582d6d286bdcf1bc04d10f0ce812d156073cde",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "046bd6638a30086f36312f45296c50b096d5b39f",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "058357b6239a9c9bf5858ca38ba2133c65556631",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "21afed19fa8e0bb2f52a723c60efd9b0bab67bea",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "b796460593a909c55ab1ca48a2a8ca45080d8481",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "9063764627f683ce5facf06d8ba07c910858bc07",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "366572320f6805a11fc4f9546b604792323f6688",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "a32789de1fe803367fa8c33a0be55da72d26a9a9",
+                            "status": "NEW"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Artem Vasilev",
+            "email": "avasilev1992@gmail.com",
+            "branches": [
+                {
+                    "name": "develop",
+                    "commits": [
+                        {
+                            "commitHash": "c151c3804d452d059a045b382d6ffa351501d31c",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "aa9fb3dccbec29be3cb330b058aa7192b9a20ca3",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "655e8052704e08e8a00ccf29ddafff12fe6cc058",
+                            "status": "NEW"
+                        }
+                    ]
+                },
+                {
+                    "name": "hackaton",
+                    "commits": [
+                        {
+                            "commitHash": "6b50545517e1a8a7b837f6523a53e97c8ae28279",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "6441c1cb8ddbd14f96b3aac0c5e009a51a825f48",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "01d0ee6b6656f778f39c232a062c86ac34adb002",
+                            "status": "NEW"
+                        }
+                    ]
+                },
+                {
+                    "name": "master",
+                    "commits": [
+                        {
+                            "commitHash": "6b50545517e1a8a7b837f6523a53e97c8ae28279",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "6441c1cb8ddbd14f96b3aac0c5e009a51a825f48",
+                            "status": "NEW"
+                        },
+                        {
+                            "commitHash": "01d0ee6b6656f778f39c232a062c86ac34adb002",
+                            "status": "NEW"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Artem Vasilev",
+            "email": "53534684+VasilevArtem@users.noreply.github.com",
+            "branches": [
+                {
+                    "name": "master",
+                    "commits": [
+                        {
+                            "commitHash": "76940f576c5d22078b6cb407917584190a5863c1",
+                            "status": "NEW"
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "url": "https://github.com/alfaInsurance/devQ_testData_pythonProject/"
+}

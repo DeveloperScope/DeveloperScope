@@ -367,9 +367,9 @@ DEFAULT_TEMPLATE = """
 # Demo runner
 # ────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
-    AUTHOR = "panfilovva"
-    IN_JSON = f"out/devQ_testData_PythonProject/{AUTHOR}.json"
-    REPO_URL = "https://github.com/alfaInsurance/devQ_testData_pythonProject"
+    AUTHOR = "iliyas.dzabbarov"
+    IN_JSON = f"out/codeutils/{AUTHOR}.json"
+    REPO_URL = "https://github.com/developerscope/codeutils"
     with open(IN_JSON, "r", encoding="utf-8") as jf:
         analysis_obj: AuthorsAnalysis = json.load(jf)
 
