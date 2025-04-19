@@ -1,5 +1,6 @@
 pydriller
 openai
+jinja2
 ipykernel
 colorama==0.4.6
 lizard==1.17.24

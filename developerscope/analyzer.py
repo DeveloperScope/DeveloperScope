@@ -7,6 +7,7 @@ import git
 from pydriller import Repository
 
 import warnings
+
 warnings.filterwarnings("ignore", category=SyntaxWarning)
 
 from developerscope.haslted import halstead_effort
@@ -40,16 +41,21 @@ def get_all_branches(repo_path: str):
     return git_repo.branches
 
 
+def get_merge_commits_map(repo_path: str, only_in_branch: str | None = None):
 
-def get_merge_commits_map(repo_path: str): 
     merge_commts_map: dict[str, list[str]] = defaultdict(list)
     author_mapping = defaultdict(set)
 
-    for branch in get_all_branches(repo_path):
-        repo = Repository(str(repo_path), only_in_branch=branch.name)
+    if only_in_branch is None:
+        branches = [head.name for head in get_all_branches(repo_path)]
+    else:
+        branches = [only_in_branch]
+    
+    for branch in branches:
+        repo = Repository(str(repo_path), only_in_branch=branch)
 
         for commit in repo.traverse_commits():
-            if not commit.msg.startswith('Merge'):
+            if not commit.msg.startswith("Merge"):
                 continue
 
             # print(commit.msg.__repr__())
@@ -62,16 +68,24 @@ def get_merge_commits_map(repo_path: str):
     return merge_commts_map, author_mapping
 
 
+from developerscope._types import (
+    RepositoryStats,
+    AuthorStats,
+    BranchStats,
+    CommitStatus,
+)
+
+
 def get_difference(commit: git.Commit) -> str:
     # if len(merge_commit.parents) != 2:
     #     raise ValueError("Only 2 parents allowed for merge request commits")
 
     first_parent = commit.parents[0]
     diff_index = first_parent.diff(commit, create_patch=True)
-    
-    difference = ''
+
+    difference = ""
     for diff in diff_index:
-        diff_text = diff.diff.decode('utf-8')
+        diff_text = diff.diff.decode("utf-8")
         file_header = f"==== File: {diff.a_path or diff.b_path} ====\n"
         difference += file_header + diff_text + "\n\n"
 
@@ -79,26 +93,27 @@ def get_difference(commit: git.Commit) -> str:
 
 
 def get_prompt_for_merge_commit(commit: git.Commit) -> str:
-    prompt = commit.message + '\n\n'
+    prompt = commit.message + "\n\n"
 
-    prompt += 'HASLTED EFFORT: %s\n\n' % halstead_effort(commit)    
+    prompt += "HASLTED EFFORT: %s\n\n" % halstead_effort(commit)
 
     # for file in get_current_state_paths(commit):
     #     prompt += file + '\n'
-    prompt += '\n' + get_difference(commit)
+    prompt += "\n" + get_difference(commit)
     return prompt
+
 
 def get_current_state(commit: git.Commit, include_only: list[str] | None = None):
     file_chunks = []
 
     for blob in commit.tree.traverse():
-        if blob.type == 'blob':  # it's a file
+        if blob.type == "blob":  # it's a file
             file_path = blob.path
             if include_only:
                 if file_path not in include_only:
                     continue
 
-            file_content = blob.data_stream.read().decode('utf-8', errors='replace')
+            file_content = blob.data_stream.read().decode("utf-8", errors="replace")
             print(file_path)
             formatted = f"### FILE: `{file_path}`\n\n```\n{file_content}\n```\n"
             file_chunks.append(formatted)
@@ -107,11 +122,11 @@ def get_current_state(commit: git.Commit, include_only: list[str] | None = None)
     final_string = "\n\n".join(file_chunks)
     return final_string
 
+
 def get_current_state_paths(commit: git.Commit) -> list[str]:
     file_paths = []
 
     for blob in commit.tree.traverse():
-        if blob.type == 'blob':  # it's a file
+        if blob.type == "blob":  # it's a file
             file_paths.append(str(blob.path))
     return file_paths
-

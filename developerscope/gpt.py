@@ -53,6 +53,7 @@ Assume the user will paste the full raw data in the user message. Do not explain
 
 
 from pathlib import Path
+from typing import cast
 import git
 
 from developerscope.analyzer import get_current_state_paths
@@ -189,8 +190,10 @@ async def anylyze_commit(target_commit: git.Commit):
     response = await run_chat_with_functions(input_messages, tools, target_commit)
     input_messages = get_review_input_messages(response)
     response = await run_chat_with_functions(input_messages, tools, target_commit)
-    return response.text
-
+    try:
+        return cast(MergeRequestAnalysis, json.loads(response.text))
+    except Exception:
+        return response.text
 
 async def generate_html_report_for_author(
     author: str,
@@ -213,3 +216,14 @@ async def generate_html_report_for_author(
     output_path.write_text(html_output, encoding="utf-8")
 
     print(f"✅ Report saved to: {output_path}")
+
+async def generate_summary(data: str) -> str:
+    input_messages = [
+        {"role": "system", "content": "Generate VERY SHORT (2-3 sentence summary) for this person"},
+        {"role": "user", "content": data},
+    ]
+    response = await client.responses.create(
+        model="gpt-4.1",
+        input=input_messages,
+    )
+    return response.content.strip()

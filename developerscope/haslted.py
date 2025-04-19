@@ -26,14 +26,13 @@ def halstead_effort(commit: git.Commit, *, changed_only: bool = True) -> float:
     otherwise we walk the whole tree.
     """
     total = 0.0
+    for blob in commit.tree.traverse():
+        if blob.type == "blob":
+            total += _halstead_effort_for_blob(blob)
+
     if changed_only:
         parent = commit.parents[0]
-        for diff in parent.diff(commit):
-            blob = diff.b_blob or diff.a_blob
+        for blob in parent.tree.traverse():
             if blob:
-                total += _halstead_effort_for_blob(blob)
-    else:
-        for blob in commit.tree.traverse():
-            if blob.type == "blob":
-                total += _halstead_effort_for_blob(blob)
+                total -= _halstead_effort_for_blob(blob)
     return round(total, 2)
