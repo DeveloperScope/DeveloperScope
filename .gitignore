@@ -1,2 +1,7 @@
-.venv
 .env
+.venv
+venv/
+env/
+out/
+repositories/
+__pycache__/
